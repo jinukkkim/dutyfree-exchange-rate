@@ -39,7 +39,19 @@ export default function BaseRateHistory({
                   {row.rate === null ? (
                     <span className="text-slate-400">미확정</span>
                   ) : (
-                    row.rate.toLocaleString("ko-KR")
+                    <>
+                      {row.rate.toLocaleString("ko-KR")}
+                      {/* 값을 아는데 확정하지 못한 행이 있다. 값만 보여주면 확정 행과
+                          구분이 안 되고, 값을 숨기면 아는 것까지 잃는다. 둘 다 보여준다. */}
+                      {row.status === "unconfirmed" && (
+                        <span
+                          className="ml-1 text-xs font-normal text-amber-700"
+                          title={row.note || "원문으로 확정하지 못한 값"}
+                        >
+                          미확정
+                        </span>
+                      )}
+                    </>
                   )}
                 </td>
               </tr>
