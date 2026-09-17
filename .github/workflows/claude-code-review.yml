@@ -45,9 +45,11 @@ jobs:
         with:
           # 0 이어야 origin/main 이 로컬에 있다. 1(shallow)이면 리뷰어가
           # `git diff origin/main...HEAD` 를 못 해서 매번 `git fetch` 로 손을
-          # 뻗고, 그건 아래 allowedTools 에도 액션 기본 목록에도 없어 거부된다.
+          # 뻗는다. 지금은 아래 allowedTools 에 `Bash(git fetch:*)` 가 있어
+          # 거부되지는 않지만, 턴과 러너 시간을 쓴다.
           #
-          # 거부는 조용히 끝나지 않는다. 2026-09-06 PR #91 의 run 34048868790
+          # 그 허용은 나중에 덧댄 것이고, 원래 증상은 거부였다. 거부는 조용히
+          # 끝나지 않는다. 2026-09-06 PR #91 의 run 34048868790
           # attempt 1 은 permission_denials 16 회에 num_turns 7 로 조기 종료했고,
           # 그 전에 추적 코멘트를 마무리하는 update_claude_comment 를 못 불렀다.
           # job 은 success 라 체크는 초록인데 코멘트만 "진행 중" 스피너로 영원히
