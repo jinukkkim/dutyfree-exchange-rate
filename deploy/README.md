@@ -19,7 +19,11 @@ cat ~/.ssh/dfx_deploy.pub
 를 체크한다.** 빠뜨리면 clone 은 되고 push 만 매일 실패하며, 그 실패는 다음 날
 로그를 볼 때까지 보이지 않는다.
 
-박스에 다른 리포의 키가 이미 있으면 호스트 별칭으로 분리한다:
+이어서 `~/.ssh/config` 에 호스트 별칭을 만든다. **다른 리포의 키가 있든 없든
+필요한 단계다** — 위에서 만든 `dfx_deploy` 는 ssh 가 자동으로 집어드는 기본
+식별 파일명(`id_ed25519` 등)이 아니므로, 별칭이 없으면 ssh 가 이 키를 아예
+쓰지 않는다. 아래 clone 명령이 `github-dfx` 를 쓰기 때문에 건너뛰면
+`Could not resolve hostname github-dfx` 로 죽는다.
 
 ```bash
 cat >> ~/.ssh/config <<'EOF'
