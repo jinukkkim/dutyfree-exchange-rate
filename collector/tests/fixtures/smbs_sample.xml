@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="EUC-KR"?>
+<chart caption='기간별 매매기준율' yAxisName='Rate (Won)'>
+	<set color='c93749' label='26.09.11' value='1338.2' />
+	<set color='c93749' label='26.09.14' value='1346.4' />
+	<set color='c93749' label='26.09.15' value='1345.3' />
+	<set color='c93749' label='26.09.16' value='1353.3' />
+	<set color='c93749' label='26.09.17' value='1368.3' />
+</chart>
