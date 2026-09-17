@@ -1,5 +1,8 @@
 import { OPERATOR_LABELS, type BaseRate } from "../lib/baseRates"
 
+/** note 가 비어 있을 때 쓰는 기본 사유. title 과 sr-only 가 같은 문구를 써야 한다. */
+const DEFAULT_REASON = "원문으로 확정하지 못한 값"
+
 export default function BaseRateHistory({
   history,
   verifiedAt,
@@ -29,7 +32,9 @@ export default function BaseRateHistory({
             </tr>
           </thead>
           <tbody>
-            {history.map((row) => (
+            {history.map((row) => {
+              const reason = row.note || DEFAULT_REASON
+              return (
               <tr key={`${row.operator}-${row.effectiveDate}`} className="border-b">
                 <td className="py-1 tabular-nums">{row.effectiveDate}</td>
                 <td className="py-1">
@@ -46,13 +51,13 @@ export default function BaseRateHistory({
                       {row.status === "unconfirmed" && (
                         <span
                           className="ml-1 text-xs font-normal text-amber-700"
-                          title={row.note || "원문으로 확정하지 못한 값"}
+                          title={reason}
                         >
                           미확정
                           {/* title 은 마우스를 올려야만 보인다. 키보드·터치·스크린리더
                               사용자에게도 사유가 닿도록 읽히는 텍스트로 함께 둔다. */}
                           <span className="sr-only">
-                            {` — ${row.note || "원문으로 확정하지 못한 값"}`}
+                            {` — ${reason}`}
                           </span>
                         </span>
                       )}
@@ -60,7 +65,8 @@ export default function BaseRateHistory({
                   )}
                 </td>
               </tr>
-            ))}
+              )
+            })}
           </tbody>
         </table>
       )}
