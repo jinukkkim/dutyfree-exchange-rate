@@ -26,3 +26,10 @@ lotte,2026-07-08,1500,confirmed,https://example.com/a,
   expect(screen.getByText("1,500")).toBeInTheDocument()
   expect(screen.queryByText("미확정")).not.toBeInTheDocument()
 })
+
+test("미확정 사유가 마우스 없이도 읽힌다", () => {
+  // title 속성만으로는 키보드·터치·스크린리더 사용자에게 닿지 않는다.
+  render(<BaseRateHistory history={parseBaseRates(CSV)} verifiedAt="2026-09-18" />)
+
+  expect(screen.getByText(/일자 미확인/)).toBeInTheDocument()
+})
