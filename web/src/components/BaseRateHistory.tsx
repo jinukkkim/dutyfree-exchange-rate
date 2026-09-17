@@ -49,6 +49,11 @@ export default function BaseRateHistory({
                           title={row.note || "원문으로 확정하지 못한 값"}
                         >
                           미확정
+                          {/* title 은 마우스를 올려야만 보인다. 키보드·터치·스크린리더
+                              사용자에게도 사유가 닿도록 읽히는 텍스트로 함께 둔다. */}
+                          <span className="sr-only">
+                            {` — ${row.note || "원문으로 확정하지 못한 값"}`}
+                          </span>
                         </span>
                       )}
                     </>
