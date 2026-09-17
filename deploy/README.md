@@ -2,14 +2,61 @@
 
 ## 설치
 
+**전부 박스 안에서 실행한다.** `/home/ubuntu` 는 우분투 경로이고 맥에는 없다 —
+로컬에서 돌리면 clone 이 실패한 뒤 뒤 명령이 현재 디렉터리에서 실행된다.
+
+### 1. deploy key
+
+수집기가 스스로 push 하므로 쓰기 권한이 필요하다. 박스에서 만든다 — 개인키가
+노트북에 사본으로 남을 이유가 없다.
+
 ```bash
-git clone <repo> /home/ubuntu/duty-free-exchange-rate
+ssh-keygen -t ed25519 -C "dfx-collector" -f ~/.ssh/dfx_deploy -N ""
+cat ~/.ssh/dfx_deploy.pub
+```
+
+출력된 한 줄을 GitHub → Settings → Deploy keys 에 등록하고 **Allow write access
+를 체크한다.** 빠뜨리면 clone 은 되고 push 만 매일 실패하며, 그 실패는 다음 날
+로그를 볼 때까지 보이지 않는다.
+
+박스에 다른 리포의 키가 이미 있으면 호스트 별칭으로 분리한다:
+
+```bash
+cat >> ~/.ssh/config <<'EOF'
+
+Host github-dfx
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/dfx_deploy
+  IdentitiesOnly yes
+EOF
+chmod 600 ~/.ssh/config
+
+ssh -T git@github-dfx    # "Hi <owner>/<repo>!" 가 나와야 한다
+```
+
+### 2. 클론과 설치
+
+```bash
+git clone git@github-dfx:<owner>/<repo>.git /home/ubuntu/duty-free-exchange-rate
 cd /home/ubuntu/duty-free-exchange-rate/collector
 python3.12 -m venv .venv
 .venv/bin/pip install -e .
 ```
 
-git push 자격증명은 deploy key 로 설정한다.
+`python3.12 -m venv` 가 실패하면 `sudo apt install -y python3.12-venv`.
+
+### 3. git 신원
+
+**이걸 빼면 매일 실패한다.** `collect.py` 가 `git commit` 을 부르는데, 신원이
+없으면 "Please tell me who you are" 로 죽는다. 리포 로컬 설정이라 박스의 다른
+프로젝트에는 영향이 없다.
+
+```bash
+cd /home/ubuntu/duty-free-exchange-rate
+git config user.name "dfx collector"
+git config user.email "<your-email>"
+```
 
 수집기는 `main` 에서만 동작한다. `collect.sh` 가 현재 브랜치를 확인하고 다르면
 거부한다 — 인자 없는 `git push` 가 엉뚱한 브랜치로 나가 데이터가 조용히 다른
@@ -30,8 +77,28 @@ Grace period 는 36시간으로 잡는다. 하루 한 번 도는 크론이 한 �
 
 ## 크론
 
+`crontab.example` 은 박스가 `Etc/UTC` 로 도는 것을 전제한다. 먼저 확인한다:
+
 ```bash
-crontab -e   # deploy/crontab.example 내용을 붙여넣는다
+timedatectl | grep "Time zone"    # Etc/UTC 여야 한다
+```
+
+KST 로 돌고 있으면 `0 0` 대신 `0 9` 로 바꾼다.
+
+**크론을 걸기 전에 손으로 한 번 돌린다.** 크론 실패는 하루에 한 번만 드러나므로
+여기서 잡는 편이 훨씬 싸다.
+
+```bash
+/home/ubuntu/duty-free-exchange-rate/deploy/collect.sh
+# 기대: "no change (latest fixing ...)" 또는 커밋 1 건
+```
+
+박스에 다른 크론이 이미 있으면 `crontab -e` 로 열어 **덧붙인다**. 기존 항목을
+지우지 않도록 아래처럼 append 하는 편이 안전하다:
+
+```bash
+(crontab -l; echo; cat /home/ubuntu/duty-free-exchange-rate/deploy/crontab.example) | crontab -
+crontab -l    # 기존 항목이 남아 있는지 확인
 ```
 
 ## 백업
