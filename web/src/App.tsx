@@ -1,5 +1,6 @@
 import ratesCsv from "../../data/rates.csv?raw"
 
+import RateChart from "./components/RateChart"
 import StalenessBanner from "./components/StalenessBanner"
 import TodayTomorrow from "./components/TodayTomorrow"
 import { parseRates } from "./lib/rates"
@@ -23,6 +24,7 @@ export default function App() {
     <main className="mx-auto min-h-screen max-w-2xl bg-white text-slate-900">
       <StalenessBanner rates={rates} now={new Date()} />
       <TodayTomorrow rates={rates} today={todayKst()} />
+      <RateChart rates={rates} />
     </main>
   )
 }
