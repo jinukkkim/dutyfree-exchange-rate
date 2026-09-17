@@ -60,9 +60,19 @@ def upsert(existing: list[Row], incoming: list[Row]) -> tuple[list[Row], int]:
     merged = {row.fixing_date: row for row in existing}
     changed = 0
     for row in incoming:
-        if merged.get(row.fixing_date) != row:
-            merged[row.fixing_date] = row
-            changed += 1
+        old = merged.get(row.fixing_date)
+        # 행 전체를 비교하면 안 된다. collected_at 은 매 실행마다 반드시 달라지므로
+        # 값이 하나도 안 바뀐 날에도 10 행 전부가 "변경"으로 잡히고, 위의 changed == 0
+        # 분기가 영영 죽는다. 그러면 매일 같은 10 행이 diff 에 떠서 진짜 값 변동이
+        # 잡음에 묻힌다 — 데이터를 git 에 두는 이유가 diff 인데 그 diff 를 망친다.
+        #
+        # source 를 비교에서 빼는 것도 같은 이유다. 신세계가 하루 다운되면
+        # smbs+ssgdfs -> smbs 로 되돌아가며 또 churn 이 생긴다. 한번 두 소스로
+        # 확인된 값은 오늘 확인을 못 했다고 해서 덜 확인된 것이 되지 않는다.
+        if old is not None and (old.rate, old.method) == (row.rate, row.method):
+            continue
+        merged[row.fixing_date] = row
+        changed += 1
     return [merged[key] for key in sorted(merged)], changed
 
 
