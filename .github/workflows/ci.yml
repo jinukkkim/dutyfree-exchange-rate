@@ -41,5 +41,30 @@ jobs:
 
       - run: pytest
 
-  # web/ 은 Task 8 에서 생긴다. 디렉터리가 없는 채로 job 을 켜두면 CI 가
-  # 빨간 채로 시작하므로, 그때 frontend job 을 추가한다.
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # 20 이면 jsdom 이 물고 오는 undici(engines: >=22.19) 가 로드 중
+          # markAsUncloneable 로 죽는다. npm ci 는 EBADENGINE 을 경고만 하고
+          # 넘어가므로 실패가 npm test 까지 미뤄진다. 로컬 개발 버전과 맞춘다.
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+
+      - run: npm run type-check
+
+      - run: npm test
+
+      # Vercel 이 배포에 쓰는 것은 이 명령이다. 돌리지 않으면 빌드에서만 나는
+      # 회귀가 CI 를 통과하고 배포에서 처음 드러난다.
+      - run: npm run build
