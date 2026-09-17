@@ -37,3 +37,22 @@ test("MAR 과 TWAP 경계에서 선을 끊는다", () => {
   // 방법론이 다르면 같은 선으로 잇지 않는다 → 두 개의 path
   expect(container.querySelectorAll("path[data-testid='rate-line']")).toHaveLength(2)
 })
+
+test("기간 버튼은 행 개수가 아니라 달력으로 자른다", () => {
+  // 고시는 영업일에만 있다. 30 행을 자르면 달력상 약 6 주가 되므로,
+  // "1개월" 버튼이 한 달보다 훨씬 긴 구간을 보여주게 된다.
+  const twoMonths = Array.from({ length: 44 }, (_, index) => {
+    const day = new Date(Date.UTC(2026, 6, 1))
+    day.setUTCDate(day.getUTCDate() + index * 1.4) // 영업일 간격 근사
+    return make(day.toISOString().slice(0, 10), 1400 + index)
+  })
+
+  const { container } = render(<RateChart rates={twoMonths} />)
+  const points = container
+    .querySelector("path[data-testid='rate-line']")!
+    .getAttribute("d")!
+    .match(/[ML]/g)!
+
+  // 기본 선택은 "1개월". 44 행 전부가 아니라 마지막 30 일치만 그려야 한다.
+  expect(points.length).toBeLessThan(twoMonths.length)
+})

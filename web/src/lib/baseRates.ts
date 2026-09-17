@@ -21,8 +21,13 @@ export function parseBaseRates(csv: string): BaseRate[] {
     .slice(1)
     .filter((line) => line.trim() !== "")
     .map((line) => {
-      const [operator, effectiveDate, rate, status, sourceUrl, note = ""] =
-        line.split(",")
+      // note 는 사람이 쓰는 자유 텍스트라 쉼표가 들어갈 수 있다. 앞의 다섯
+      // 컬럼만 분해하고 나머지는 전부 note 로 되돌린다 — 그냥 split 하면
+      // 쉼표 하나에 컬럼이 조용히 밀린다.
+      // rates.csv 는 기계가 쓰고 값이 날짜·숫자·고정 문자열뿐이라 해당 없다.
+      const fields = line.split(",")
+      const [operator, effectiveDate, rate, status, sourceUrl] = fields
+      const note = fields.slice(5).join(",")
       return {
         operator,
         effectiveDate,

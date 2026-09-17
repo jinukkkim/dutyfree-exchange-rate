@@ -52,7 +52,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # 20 이면 jsdom 이 물고 오는 undici(engines: >=22.19) 가 로드 중
+          # markAsUncloneable 로 죽는다. npm ci 는 EBADENGINE 을 경고만 하고
+          # 넘어가므로 실패가 npm test 까지 미뤄진다. 로컬 개발 버전과 맞춘다.
+          node-version: 24
           cache: npm
           cache-dependency-path: web/package-lock.json
 
@@ -61,3 +64,7 @@ jobs:
       - run: npm run type-check
 
       - run: npm test
+
+      # Vercel 이 배포에 쓰는 것은 이 명령이다. 돌리지 않으면 빌드에서만 나는
+      # 회귀가 CI 를 통과하고 배포에서 처음 드러난다.
+      - run: npm run build

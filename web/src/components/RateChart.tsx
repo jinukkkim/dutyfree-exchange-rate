@@ -27,10 +27,17 @@ function splitByMethod(rates: Rate[]): Rate[][] {
 export default function RateChart({ rates }: { rates: Rate[] }) {
   const [days, setDays] = useState<number>(RANGES[0].days)
 
-  const visible = useMemo(
-    () => (Number.isFinite(days) ? rates.slice(-days) : rates),
-    [rates, days],
-  )
+  // 행을 세면 안 된다. 고시는 영업일에만 있으므로 slice(-30) 은 달력상 약 6 주,
+  // slice(-365) 는 약 1.5 년이 된다. 버튼 문구가 "1개월"·"1년" 이므로 달력으로 자른다.
+  const visible = useMemo(() => {
+    const last = rates.at(-1)
+    if (!Number.isFinite(days) || !last) return rates
+
+    const cutoff = new Date(`${last.fixingDate}T00:00:00Z`)
+    cutoff.setUTCDate(cutoff.getUTCDate() - days)
+    const cutoffIso = cutoff.toISOString().slice(0, 10)
+    return rates.filter((rate) => rate.fixingDate >= cutoffIso)
+  }, [rates, days])
 
   const { min, max } = useMemo(() => {
     const values = visible.map((r) => r.rate)

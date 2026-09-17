@@ -81,6 +81,7 @@ def main() -> int:
     source = "smbs+ssgdfs" if verified else "smbs"
     existing = read_rates(RATES_PATH)
     known = {row.fixing_date: row.rate for row in existing}
+    known_dates = sorted(known)
 
     incoming: list[Row] = []
     for fixing_date, rate in fetched:
@@ -90,7 +91,11 @@ def main() -> int:
             print(f"FATAL {exc}", file=sys.stderr)
             return 1
 
-        previous = known.get(fixing_date - timedelta(days=1))
+        # 달력상 어제가 아니라 **직전 고시일**을 본다. 고시는 영업일에만 있으므로
+        # 어제로 찾으면 월요일과 연휴 다음 첫 거래일에 previous 가 None 이 되어
+        # 검사가 통째로 빠진다 — 며칠치가 몰려 변동이 가장 클 수 있는 바로 그 날이다.
+        previous_date = fixing_for(known_dates, fixing_date)
+        previous = known.get(previous_date) if previous_date is not None else None
         if previous is not None and is_abnormal_move(previous, rate):
             print(
                 f"WARN abnormal move on {fixing_date.isoformat()}: "

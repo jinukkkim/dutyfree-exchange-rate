@@ -7,4 +7,3 @@ dist/
 .env
 .env.local
 *.egg-info/
-dist/
