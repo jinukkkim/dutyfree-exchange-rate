@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
 import { expect, test } from "vitest"
 
 import type { Rate } from "../lib/rates"
@@ -99,4 +99,18 @@ test("방법론이 이어지는 날에는 점선과 점이 함께 나온다", ()
 
   expect(container.querySelector("path[data-testid='rate-line-future']")).toBeTruthy()
   expect(container.querySelector("circle[data-testid='rate-point-future']")).toBeTruthy()
+})
+
+test("연휴로 고시가 비어도 구간 버튼은 남는다", () => {
+  // 실제로 있었던 공백이다 — 2025 추석은 10-02 → 10-10 로 8 일이 빈다.
+  // "1주" 로 자르면 점이 하나뿐이라 선을 못 그리는데, 이때 섹션을 통째로
+  // 지우면 다른 구간으로 바꿀 버튼까지 사라져 빠져나갈 길이 없어진다.
+  const holiday = [make("2025-10-02", 1400), make("2025-10-10", 1410)]
+  render(<RateChart rates={holiday} today="2025-10-20" />)
+
+  fireEvent.click(screen.getByRole("button", { name: "1주" }))
+
+  expect(screen.getByRole("button", { name: "1주" })).toBeInTheDocument()
+  expect(screen.getByRole("button", { name: "1년" })).toBeInTheDocument()
+  expect(screen.getByText(/이 구간에는 고시가 없습니다/)).toBeInTheDocument()
 })

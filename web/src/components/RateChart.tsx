@@ -77,7 +77,20 @@ export default function RateChart({
     return { min: Math.min(...values), max: Math.max(...values) }
   }, [visible])
 
-  if (visible.length < 2) return null
+  // 선을 그리려면 점이 둘은 있어야 한다. 다만 섹션을 통째로 지우면 구간 버튼까지
+  // 사라져 빠져나갈 길이 없다 — 연휴로 고시가 7일 넘게 비는 해가 실제로 있다
+  // (2017 추석 11일, 2025 추석 8일). 버튼은 남기고 안내만 바꾼다.
+  if (visible.length < 2) {
+    return (
+      <section className="px-4 py-8">
+        <ChartHeader days={days} setDays={setDays} />
+        <p className="py-10 text-center text-sm text-slate-400">
+          이 구간에는 고시가 없습니다. 더 긴 구간을 선택해 주세요.
+        </p>
+      </section>
+    )
+  }
+
 
   const span = max - min || 1
   const innerWidth = WIDTH - PAD.left - PAD.right
@@ -123,25 +136,7 @@ export default function RateChart({
 
   return (
     <section className="px-4 py-8">
-      <div className="mb-3 flex items-baseline justify-between">
-        <h2 className="text-base font-medium text-slate-700">적용환율 추이</h2>
-        <div className="flex gap-1">
-          {RANGES.map((range) => (
-            <button
-              key={range.label}
-              type="button"
-              onClick={() => setDays(range.days)}
-              className={
-                days === range.days
-                  ? "rounded bg-slate-900 px-2 py-1 text-xs text-white"
-                  : "rounded px-2 py-1 text-xs text-slate-500 hover:bg-slate-100"
-              }
-            >
-              {range.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <ChartHeader days={days} setDays={setDays} />
 
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
@@ -150,9 +145,10 @@ export default function RateChart({
         aria-label={`적용환율 추이, 최저 ${formatRate(min)} 최고 ${formatRate(max)}`}
         onMouseMove={(event) => pointAt(event.clientX, event.currentTarget)}
         onMouseLeave={() => setHover(null)}
-        onTouchMove={(event) =>
-          pointAt(event.touches[0].clientX, event.currentTarget)
-        }
+        onTouchMove={(event) => {
+          const touch = event.touches[0]
+          if (touch) pointAt(touch.clientX, event.currentTarget)
+        }}
         onTouchEnd={() => setHover(null)}
       >
         <text x={4} y={PAD.top + 4} className="fill-slate-400 text-[10px]">
@@ -240,5 +236,36 @@ export default function RateChart({
         )}
       </svg>
     </section>
+  )
+}
+
+/** 데이터가 모자라 차트를 못 그리는 경우에도 이 헤더는 남는다. */
+function ChartHeader({
+  days,
+  setDays,
+}: {
+  days: number
+  setDays: (days: number) => void
+}) {
+  return (
+    <div className="mb-3 flex items-baseline justify-between">
+      <h2 className="text-base font-medium text-slate-700">적용환율 추이</h2>
+      <div className="flex gap-1">
+        {RANGES.map((range) => (
+          <button
+            key={range.label}
+            type="button"
+            onClick={() => setDays(range.days)}
+            className={
+              days === range.days
+                ? "rounded bg-slate-900 px-2 py-1 text-xs text-white"
+                : "rounded px-2 py-1 text-xs text-slate-500 hover:bg-slate-100"
+            }
+          >
+            {range.label}
+          </button>
+        ))}
+      </div>
+    </div>
   )
 }
