@@ -15,6 +15,14 @@ const RATES = [
   make("2026-09-17", 1368.3),
 ]
 
+/** 5년 컷오프 양쪽에 점이 걸치도록 10 년을 덮는다. */
+const DECADE = [
+  make("2016-01-04", 1172),
+  make("2021-06-01", 1110),
+  make("2024-01-02", 1300),
+  make("2026-09-17", 1368.3),
+]
+
 // 마지막 고시(09-17)는 09-18 적용분이다. 미래 구간을 떼지 않으려면
 // 그보다 뒤인 날을 "오늘"로 준다.
 const AFTER = "2026-09-30"
@@ -113,4 +121,33 @@ test("연휴로 고시가 비어도 구간 버튼은 남는다", () => {
   expect(screen.getByRole("button", { name: "1주" })).toBeInTheDocument()
   expect(screen.getByRole("button", { name: "1년" })).toBeInTheDocument()
   expect(screen.getByText(/이 구간에는 고시가 없습니다/)).toBeInTheDocument()
+})
+
+test("전체 구간은 가장 오래된 고시까지 그린다", () => {
+  // 무한대를 날짜에서 빼면 Invalid Date 가 되고 toISOString() 이 throw 한다.
+  // 자르지 않고 그대로 넘기는 경로가 반드시 있어야 한다.
+  const { container } = render(<RateChart rates={DECADE} today="2026-09-30" />)
+
+  fireEvent.click(screen.getByRole("button", { name: "전체" }))
+
+  // 5년 컷오프(2021-09-18) 이전 고시까지 살아 있어야 한다 → 좌표쌍 4개
+  const points = container
+    .querySelector("path[data-testid='rate-line']")!
+    .getAttribute("d")!
+    .match(/[ML]/g)!
+  expect(points).toHaveLength(4)
+})
+
+test("5년 구간은 그보다 오래된 고시를 자른다", () => {
+  const { container } = render(<RateChart rates={DECADE} today="2026-09-30" />)
+
+  fireEvent.click(screen.getByRole("button", { name: "5년" }))
+
+  // 2016·2021-06 은 컷오프 밖이다 → 2024·2026 두 개만 남는다
+  expect(
+    container
+      .querySelector("path[data-testid='rate-line']")!
+      .getAttribute("d")!
+      .match(/[ML]/g)!,
+  ).toHaveLength(2)
 })

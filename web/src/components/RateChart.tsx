@@ -9,6 +9,7 @@ const RANGES = [
   { label: "6개월", days: 182 },
   { label: "1년", days: 365 },
   { label: "5년", days: 1826 },
+  { label: "전체", days: Number.POSITIVE_INFINITY },
 ] as const
 
 const DEFAULT_DAYS = 30
@@ -64,7 +65,7 @@ export default function RateChart({
   // slice(-365) 는 약 1.5 년이 된다. 버튼 문구가 "1개월"·"1년" 이므로 달력으로 자른다.
   const visible = useMemo(() => {
     const last = series.at(-1)
-    if (!last) return series
+    if (!Number.isFinite(days) || !last) return series
 
     const cutoff = new Date(`${last.date}T00:00:00Z`)
     cutoff.setUTCDate(cutoff.getUTCDate() - days)
