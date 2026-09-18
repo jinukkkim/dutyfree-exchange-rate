@@ -1,19 +1,17 @@
-import baseRatesCsv from "../../data/base_rates.csv?raw"
-import meta from "../../data/meta.json"
+import { useEffect, useState } from "react"
+
 import ratesCsv from "../../data/rates.csv?raw"
 
-import BaseRateHistory from "./components/BaseRateHistory"
-import Glossary from "./components/Glossary"
+import Footer from "./components/Footer"
 import RateChart from "./components/RateChart"
+import RateGuide from "./components/RateGuide"
 import StalenessBanner from "./components/StalenessBanner"
 import TodayTomorrow from "./components/TodayTomorrow"
-import { parseBaseRates } from "./lib/baseRates"
 import { parseRates } from "./lib/rates"
 
 // 전량이 100KB 수준이라 번들에 싣는다. fetch 폭포와 로딩 상태가 사라지고,
 // "두 숫자"가 첫 페인트에 이미 들어 있다.
 const rates = parseRates(ratesCsv)
-const baseRates = parseBaseRates(baseRatesCsv)
 
 /** KST 기준 오늘 날짜. 방문자의 타임존과 무관하게 한국 날짜여야 한다. */
 function todayKst(): string {
@@ -25,14 +23,43 @@ function todayKst(): string {
   }).format(new Date())
 }
 
+/**
+ * 페이지가 둘뿐이라 해시로 가른다. 라우터를 넣을 이유도, 정적 호스팅에
+ * rewrite 규칙을 붙일 이유도 아직 없다.
+ */
+function useHashRoute(): string {
+  const [hash, setHash] = useState(window.location.hash)
+  useEffect(() => {
+    const sync = () => setHash(window.location.hash)
+    window.addEventListener("hashchange", sync)
+    return () => window.removeEventListener("hashchange", sync)
+  }, [])
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [hash])
+  return hash
+}
+
 export default function App() {
+  const route = useHashRoute()
+  const today = todayKst()
+
   return (
-    <main className="mx-auto min-h-screen max-w-2xl bg-white text-slate-900">
-      <StalenessBanner rates={rates} now={new Date()} />
-      <TodayTomorrow rates={rates} today={todayKst()} />
-      <RateChart rates={rates} />
-      <BaseRateHistory history={baseRates} verifiedAt={meta.base_rates_verified_at} />
-      <Glossary />
-    </main>
+    <div className="min-h-screen bg-white text-slate-900">
+      <div className="mx-auto max-w-2xl">
+        <main>
+          {route === "#/guide" ? (
+            <RateGuide />
+          ) : (
+            <>
+              <StalenessBanner rates={rates} now={new Date()} />
+              <TodayTomorrow rates={rates} today={today} />
+              <RateChart rates={rates} today={today} />
+            </>
+          )}
+        </main>
+        <Footer />
+      </div>
+    </div>
   )
 }
