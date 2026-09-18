@@ -3,7 +3,3 @@ export function formatRate(rate: number): string {
   const [whole, fraction] = rate.toFixed(2).split(".")
   return `${Number(whole).toLocaleString("ko-KR")}.${fraction}`
 }
-
-export function formatKrw(won: number): string {
-  return `${Math.round(won).toLocaleString("ko-KR")}원`
-}

@@ -39,3 +39,29 @@ export function appliedOn(rates: Rate[], targetISO: string): Rate | null {
   }
   return found
 }
+
+/** ISO 날짜 하루 뒤. 고시일 → 적용일 변환에 쓴다 (고시 D 는 D+1 에 적용). */
+export function nextDay(iso: string): string {
+  const date = new Date(`${iso}T00:00:00Z`)
+  date.setUTCDate(date.getUTCDate() + 1)
+  return date.toISOString().slice(0, 10)
+}
+
+/**
+ * 내일 적용환율을 확정할 수 있는가.
+ *
+ * 내일 적용되는 것은 **오늘 고시**다. 그래서 오늘 고시가 데이터에 없으면
+ * 확정할 수 없다. appliedOn(rates, 내일) 을 그대로 쓰면 주말 이월 규칙이
+ * 직전 고시를 돌려주므로, 아직 안 나온 값을 확정인 것처럼 보여주게 된다.
+ *
+ * 주말은 예외다. 애초에 고시가 없는 날이므로 직전 고시가 이어지는 것이
+ * 확정이고, 여기서 "미고시"를 띄우면 토·일마다 틀린 안내가 나간다.
+ * 공휴일은 주말과 구분하지 못한다 — 그 경우 값은 맞고 문구만 보수적이며,
+ * 왜 최신 고시가 없는지는 신선도 배너가 설명한다.
+ */
+export function isTomorrowConfirmed(rates: Rate[], today: string): boolean {
+  const weekday = new Date(`${today}T00:00:00Z`).getUTCDay()
+  const isBusinessDay = weekday >= 1 && weekday <= 5
+  if (!isBusinessDay) return true
+  return rates.some((rate) => rate.fixingDate === today)
+}
