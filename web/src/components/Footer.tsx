@@ -5,10 +5,10 @@ export default function Footer() {
   return (
     <footer className="mt-8 border-t px-4 py-8 text-sm text-slate-500">
       <nav className="flex justify-center gap-6">
-        <a href={REPORT_URL} className="underline underline-offset-2" rel="noreferrer">
+        <a href={REPORT_URL} className="underline underline-offset-2" target="_blank" rel="noopener noreferrer">
           제보하기
         </a>
-        <a href={GITHUB_URL} className="underline underline-offset-2" rel="noreferrer">
+        <a href={GITHUB_URL} className="underline underline-offset-2" target="_blank" rel="noopener noreferrer">
           GitHub
         </a>
       </nav>

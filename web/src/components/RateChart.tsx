@@ -174,24 +174,29 @@ export default function RateChart({
           />
         ))}
 
+        {/* 잇는 선과 점을 따로 건다. MAR/TWAP 경계에서 이어서는 안 되는 것은
+            **선**이지 점이 아닌데, 한 가드에 묶어두면 경계에 걸리는 하루만
+            내일 표식이 통째로 사라진다. */}
         {future.length >= 2 && future[0].method === future[1].method && (
-          <>
-            <path
-              data-testid="rate-line-future"
-              d={toPath(future, futureStart - 1)}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.5}
-              strokeDasharray="4 3"
-              className="text-amber-500"
-            />
-            <circle
-              cx={x(visible.length - 1)}
-              cy={y(visible.at(-1)!.rate)}
-              r={3.5}
-              className="fill-amber-500"
-            />
-          </>
+          <path
+            data-testid="rate-line-future"
+            d={toPath(future, futureStart - 1)}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.5}
+            strokeDasharray="4 3"
+            className="text-amber-500"
+          />
+        )}
+
+        {futureStart !== -1 && (
+          <circle
+            data-testid="rate-point-future"
+            cx={x(visible.length - 1)}
+            cy={y(visible.at(-1)!.rate)}
+            r={3.5}
+            className="fill-amber-500"
+          />
         )}
 
         {hovered && (

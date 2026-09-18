@@ -82,3 +82,21 @@ test("주말에도 내일 구간을 그린다", () => {
 
   expect(container.querySelector("path[data-testid='rate-line-future']")).toBeTruthy()
 })
+
+test("방법론 경계에 걸린 날에도 내일 표식은 남는다", () => {
+  // 2027-01-01 TWAP 전환. 이 하루는 오늘(MAR 적용)과 내일(TWAP 적용)이 경계를
+  // 사이에 두고 갈린다. 이을 수 없는 것은 **선**이지 점이 아니다 — 점선만 빠지고
+  // 내일 점은 남아야 한다. 하나의 가드로 묶으면 이 날만 미래 표식이 사라진다.
+  const boundary = [make("2026-12-30", 1400), make("2026-12-31", 1405), make("2027-01-01", 1390, "TWAP")]
+  const { container } = render(<RateChart rates={boundary} today="2027-01-01" />)
+
+  expect(container.querySelector("path[data-testid='rate-line-future']")).toBeNull()
+  expect(container.querySelector("circle[data-testid='rate-point-future']")).toBeTruthy()
+})
+
+test("방법론이 이어지는 날에는 점선과 점이 함께 나온다", () => {
+  const { container } = render(<RateChart rates={RATES} today="2026-09-17" />)
+
+  expect(container.querySelector("path[data-testid='rate-line-future']")).toBeTruthy()
+  expect(container.querySelector("circle[data-testid='rate-point-future']")).toBeTruthy()
+})
