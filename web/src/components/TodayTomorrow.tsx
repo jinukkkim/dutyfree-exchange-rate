@@ -1,4 +1,9 @@
-import { formatAmount, formatMonthDay, formatRate } from "../lib/format"
+import {
+  formatAmount,
+  formatDayLabel,
+  formatMonthDay,
+  formatRate,
+} from "../lib/format"
 import { appliedOn, isTomorrowConfirmed, nextDay, type Rate } from "../lib/rates"
 
 export default function TodayTomorrow({
@@ -29,7 +34,7 @@ export default function TodayTomorrow({
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold">오늘</span>
-            <span className="text-[13px] text-muted">{formatMonthDay(today)}</span>
+            <span className="text-[13px] text-muted">{formatDayLabel(today)}</span>
           </div>
           <div className="font-num text-[32px] font-semibold leading-[0.92] tracking-[-0.03em] tabular-nums sm:text-[58px]">
             {formatRate(todayRate.rate)}
@@ -75,7 +80,7 @@ export default function TodayTomorrow({
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold">내일</span>
             <span className="text-[13px] text-muted">
-              {formatMonthDay(nextDay(today))}
+              {formatDayLabel(nextDay(today))}
             </span>
           </div>
           {tomorrowRate ? (

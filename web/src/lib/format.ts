@@ -23,3 +23,13 @@ export function formatMonthDay(iso: string): string {
     day: "numeric",
   }).format(new Date(`${iso}T00:00:00Z`))
 }
+
+/**
+ * "9/20(일)". 적용일에는 요일이 붙어야 한다 — 주말·공휴일에 직전 고시가
+ * 이월된다는 것이 이 사이트의 기본 규칙이라, 요일이 곧 설명이다.
+ */
+export function formatDayLabel(iso: string): string {
+  const date = new Date(`${iso}T00:00:00Z`)
+  const weekday = ["일", "월", "화", "수", "목", "금", "토"][date.getUTCDay()]
+  return `${date.getUTCMonth() + 1}/${date.getUTCDate()}(${weekday})`
+}

@@ -25,8 +25,8 @@ test("어느 쪽이 얼마나 비싼지 문장으로 말한다", () => {
 test("오늘과 내일에 각자의 적용일을 붙인다", () => {
   render(<TodayTomorrow rates={parseRates(CSV)} today="2026-09-17" />)
 
-  expect(screen.getByText("9월 17일")).toBeInTheDocument()
-  expect(screen.getByText("9월 18일")).toBeInTheDocument()
+  expect(screen.getByText("9/17(목)")).toBeInTheDocument()
+  expect(screen.getByText("9/18(금)")).toBeInTheDocument()
 })
 
 test("달을 넘어가도 내일 날짜가 맞는다", () => {
@@ -36,7 +36,7 @@ test("달을 넘어가도 내일 날짜가 맞는다", () => {
 `)
   render(<TodayTomorrow rates={monthEnd} today="2026-09-30" />)
 
-  expect(screen.getByText("10월 1일")).toBeInTheDocument()
+  expect(screen.getByText("10/1(목)")).toBeInTheDocument()
 })
 
 test("환율 정보 페이지로 가는 링크를 둔다", () => {
