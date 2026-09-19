@@ -139,6 +139,10 @@ export default function RateChart({
 
   const hovered = hover === null ? null : visible[hover]
 
+  // 오늘 표시는 가장 짧은 구간에만 둔다. 반 년 이상을 펼치면 오른쪽 끝이
+  // 곧 현재라, 그 자리에 선을 하나 더 긋는 것이 아무것도 더해 주지 않는다.
+  const showToday = futureStart > 0 && days === RANGES[0].days
+
   return (
     <section className="px-4 pt-[52px]">
       <ChartHeader days={days} setDays={setDays} />
@@ -164,7 +168,7 @@ export default function RateChart({
         </text>
 
         {/* 오늘이 어디인지 그어 준다. 이 선 오른쪽은 아직 겪지 않은 날이다. */}
-        {futureStart > 0 && (
+        {showToday && (
           <line
             x1={x(futureStart - 1)}
             y1={PAD.top}
@@ -215,7 +219,7 @@ export default function RateChart({
             {monthDay(visible[Math.floor((visible.length - 1) / 2)].date)}
           </text>
         )}
-        {futureStart > 0 && (
+        {showToday && (
           <text
             x={x(futureStart - 1)}
             y={HEIGHT - 8}

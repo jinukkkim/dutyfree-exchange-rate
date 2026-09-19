@@ -91,6 +91,16 @@ test("주말에도 내일 구간을 그린다", () => {
   expect(container.querySelector("path[data-testid='rate-line-future']")).toBeTruthy()
 })
 
+test("오늘 표시는 1개월 구간에만 둔다", () => {
+  render(<RateChart rates={RATES} today="2026-09-17" />)
+
+  expect(screen.getByText("오늘")).toBeInTheDocument()
+
+  fireEvent.click(screen.getByRole("button", { name: "전체" }))
+
+  expect(screen.queryByText("오늘")).not.toBeInTheDocument()
+})
+
 test("방법론 경계에 걸린 날에는 내일 구간을 잇지 않는다", () => {
   // 2027-01-01 TWAP 전환. 이 하루는 오늘(MAR 적용)과 내일(TWAP 적용)이 경계를
   // 사이에 두고 갈린다. 값의 성격이 다르므로 한 선으로 이어서는 안 된다.
