@@ -84,8 +84,7 @@ export default function TodayTomorrow({
                 {formatRate(tomorrowRate.rate)}
               </div>
               <div className="text-xs text-muted">
-                {formatMonthDay(tomorrowRate.fixingDate)} 08시 고시 · 바뀌지
-                않습니다
+                {formatMonthDay(tomorrowRate.fixingDate)} 08시 고시
               </div>
             </>
           ) : (
