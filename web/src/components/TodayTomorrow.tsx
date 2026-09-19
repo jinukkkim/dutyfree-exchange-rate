@@ -18,7 +18,7 @@ export default function TodayTomorrow({
   const delta = tomorrowRate ? tomorrowRate.rate - todayRate.rate : null
 
   return (
-    <section className="px-6 pb-20 pt-14 text-center sm:pb-[88px] sm:pt-20">
+    <section className="px-6 pb-10 pt-14 text-center sm:pb-14 sm:pt-20">
       <div className="mx-auto flex max-w-page items-center justify-center gap-4 sm:gap-10">
         <div>
           <div className="text-[15px] tracking-[-0.01em] text-muted sm:text-[17px]">
