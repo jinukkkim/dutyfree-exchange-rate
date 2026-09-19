@@ -1,11 +1,6 @@
 import { expect, test } from "vitest"
 
-import {
-  formatAmount,
-  formatKoreanDate,
-  formatMonthDay,
-  formatRate,
-} from "./format"
+import { formatAmount, formatMonthDay, formatRate } from "./format"
 
 test("환율은 소수점 2자리로 표시한다", () => {
   // 보세판매장 고시 §3④2: 소수점 이하 3자리에서 버린 후 2자리까지 표시
@@ -24,6 +19,5 @@ test("차액에서 의미 없는 0 을 떨군다", () => {
 
 test("날짜는 방문자 타임존과 무관하게 한국 날짜로 읽는다", () => {
   // KST 기준 문자열이므로 UTC 로 파싱해야 하루가 밀리지 않는다.
-  expect(formatKoreanDate("2026-09-16")).toBe("2026년 9월 16일 수요일")
   expect(formatMonthDay("2026-09-15")).toBe("9월 15일")
 })

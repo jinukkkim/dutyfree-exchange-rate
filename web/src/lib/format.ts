@@ -13,20 +13,9 @@ export function formatAmount(rate: number): string {
 }
 
 /**
- * ISO 날짜를 한국어로. 날짜 문자열은 이미 KST 기준이므로 UTC 로 읽어야
- * 방문자 타임존에 따라 하루가 밀리지 않는다.
+ * "9월 15일". 날짜 문자열은 이미 KST 기준이므로 UTC 로 읽어야 방문자
+ * 타임존에 따라 하루가 밀리지 않는다.
  */
-export function formatKoreanDate(iso: string): string {
-  return new Intl.DateTimeFormat("ko-KR", {
-    timeZone: "UTC",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    weekday: "long",
-  }).format(new Date(`${iso}T00:00:00Z`))
-}
-
-/** "9월 15일". 고시일을 짧게 적을 때 쓴다. */
 export function formatMonthDay(iso: string): string {
   return new Intl.DateTimeFormat("ko-KR", {
     timeZone: "UTC",
