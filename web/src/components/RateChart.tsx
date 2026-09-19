@@ -188,9 +188,8 @@ export default function RateChart({
           />
         ))}
 
-        {/* 잇는 선과 점을 따로 건다. MAR/TWAP 경계에서 이어서는 안 되는 것은
-            **선**이지 점이 아닌데, 한 가드에 묶어두면 경계에 걸리는 하루만
-            내일 표식이 통째로 사라진다. */}
+        {/* MAR 과 TWAP 은 잇지 않는다. 전환 당일 하루는 내일 구간이 그려지지
+            않고, 오늘 세로선 오른쪽이 비어 있는 것으로만 보인다. */}
         {future.length >= 2 && future[0].method === future[1].method && (
           <path
             data-testid="rate-line-future"
@@ -200,16 +199,6 @@ export default function RateChart({
             strokeWidth={1.5}
             strokeDasharray="4 3"
             className="text-ink"
-          />
-        )}
-
-        {futureStart !== -1 && (
-          <circle
-            data-testid="rate-point-future"
-            cx={x(visible.length - 1)}
-            cy={y(visible.at(-1)!.rate)}
-            r={3.5}
-            className="fill-ink"
           />
         )}
 
@@ -278,18 +267,6 @@ export default function RateChart({
         )}
       </svg>
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-[11.5px] text-muted">
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block w-4 border-t-[1.5px] border-ink" />
-          지나간 날
-        </span>
-        {futureStart !== -1 && (
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block w-4 border-t-[1.5px] border-dashed border-ink" />
-            내일 · 확정
-          </span>
-        )}
-      </div>
     </section>
   )
 }
