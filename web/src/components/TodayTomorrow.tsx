@@ -36,16 +36,11 @@ export default function TodayTomorrow({
           </div>
         </div>
 
-        {/* 두 값이 같은 날에도 이 칸은 비워 두지 않는다. 58px 숫자 둘이
-            맞붙으면 한 덩어리로 읽힌다. */}
-        {delta === 0 && (
-          <div
-            className="mt-[18px] h-14 w-px shrink-0 bg-rule sm:mt-[34px]"
-            aria-hidden="true"
-          />
-        )}
-
-        {delta !== null && delta !== 0 && (
+        {/* 차액 칸은 늘 자리를 지킨다. 값이 같은 날 칸이 통째로 사라지면
+            58px 숫자 둘이 맞붙어 한 덩어리로 읽힌다. 화살표는 오늘에서
+            내일로 간다는 표시일 뿐이라 등락과 무관하게 한 색이고, 오르고
+            내린 것은 아래 숫자가 말한다. */}
+        {delta !== null && (
           <div className="flex shrink-0 flex-col items-center gap-1 pt-[18px] sm:pt-[34px]">
             <svg width="26" height="10" viewBox="0 0 26 10" aria-hidden="true">
               <path
@@ -53,17 +48,16 @@ export default function TodayTomorrow({
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.4"
-                className={delta > 0 ? "text-up" : "text-down"}
+                className="text-navy"
               />
             </svg>
             <div
-              className={
-                delta > 0
-                  ? "font-num text-[15px] font-semibold tabular-nums text-up sm:text-[17px]"
-                  : "font-num text-[15px] font-semibold tabular-nums text-down sm:text-[17px]"
-              }
+              className={`font-num text-[15px] font-semibold tabular-nums sm:text-[17px] ${
+                delta > 0 ? "text-up" : delta < 0 ? "text-down" : "text-muted"
+              }`}
             >
-              {delta > 0 ? "▲" : "▼"} {formatRate(Math.abs(delta))}
+              {delta > 0 ? "▲ " : delta < 0 ? "▼ " : ""}
+              {formatRate(Math.abs(delta))}
             </div>
           </div>
         )}

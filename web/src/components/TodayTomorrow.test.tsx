@@ -82,3 +82,14 @@ test("내일이 오늘과 같으면 같다고 말한다", () => {
   expect(screen.getByText(/내일도 오늘과 같습니다/)).toBeInTheDocument()
   expect(screen.getByText(/직전 고시가 그대로 이어집니다/)).toBeInTheDocument()
 })
+
+test("두 값이 같아도 차액 칸은 자리를 지킨다", () => {
+  // 칸이 통째로 사라지면 58px 숫자 둘이 맞붙어 한 덩어리로 읽힌다.
+  const weekend = parseRates(`fix_date,rate,method,source,collected_at
+2026-09-17,1368.3,MAR,smbs,2026-09-18T09:00:00+09:00
+2026-09-18,1380.3,MAR,smbs,2026-09-19T09:00:00+09:00
+`)
+  render(<TodayTomorrow rates={weekend} today="2026-09-19" />)
+
+  expect(screen.getByText("0.00")).toBeInTheDocument()
+})
