@@ -290,7 +290,6 @@ export default function RateChart({
             내일 · 확정
           </span>
         )}
-        <span className="sm:ml-auto">x축은 적용일입니다</span>
       </div>
     </section>
   )

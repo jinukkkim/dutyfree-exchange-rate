@@ -13,7 +13,7 @@ export default function Footer() {
         </a>
       </nav>
       <p className="mt-3 text-center text-[11.5px] text-muted">
-        서울외국환중개 매매기준율 · 2016년 1월 4일부터 기록
+        서울외국환중개 매매기준율
       </p>
     </footer>
   )
