@@ -4,7 +4,6 @@ import { formatRate } from "../lib/format"
 import { isTomorrowConfirmed, nextDay, type Rate } from "../lib/rates"
 
 const RANGES = [
-  { label: "1주", days: 7 },
   { label: "1개월", days: 30 },
   { label: "6개월", days: 182 },
   { label: "1년", days: 365 },
