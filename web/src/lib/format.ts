@@ -13,19 +13,10 @@ export function formatAmount(rate: number): string {
 }
 
 /**
- * "9월 15일". 날짜 문자열은 이미 KST 기준이므로 UTC 로 읽어야 방문자
+ * "9/20(일)". 날짜 문자열은 이미 KST 기준이므로 UTC 로 읽어야 방문자
  * 타임존에 따라 하루가 밀리지 않는다.
- */
-export function formatMonthDay(iso: string): string {
-  return new Intl.DateTimeFormat("ko-KR", {
-    timeZone: "UTC",
-    month: "long",
-    day: "numeric",
-  }).format(new Date(`${iso}T00:00:00Z`))
-}
-
-/**
- * "9/20(일)". 적용일에는 요일이 붙어야 한다 — 주말·공휴일에 직전 고시가
+ *
+ * 적용일에는 요일이 붙어야 한다 — 주말·공휴일에 직전 고시가
  * 이월된다는 것이 이 사이트의 기본 규칙이라, 요일이 곧 설명이다.
  */
 export function formatDayLabel(iso: string): string {

@@ -1,9 +1,4 @@
-import {
-  formatAmount,
-  formatDayLabel,
-  formatMonthDay,
-  formatRate,
-} from "../lib/format"
+import { formatAmount, formatDayLabel, formatRate } from "../lib/format"
 import { appliedOn, isTomorrowConfirmed, nextDay, type Rate } from "../lib/rates"
 
 export default function TodayTomorrow({
@@ -38,9 +33,6 @@ export default function TodayTomorrow({
           </div>
           <div className="font-num text-[32px] font-semibold leading-[0.92] tracking-[-0.03em] tabular-nums sm:text-[58px]">
             {formatRate(todayRate.rate)}
-          </div>
-          <div className="text-xs text-muted">
-            {formatMonthDay(todayRate.fixingDate)} 08시 고시
           </div>
         </div>
 
@@ -87,9 +79,6 @@ export default function TodayTomorrow({
             <>
               <div className="font-num text-[32px] font-semibold leading-[0.92] tracking-[-0.03em] tabular-nums sm:text-[58px]">
                 {formatRate(tomorrowRate.rate)}
-              </div>
-              <div className="text-xs text-muted">
-                {formatMonthDay(tomorrowRate.fixingDate)} 08시 고시
               </div>
             </>
           ) : (
