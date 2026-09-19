@@ -1,4 +1,4 @@
-import { formatRate } from "../lib/format"
+import { formatAmount, formatMonthDay, formatRate } from "../lib/format"
 import { appliedOn, isTomorrowConfirmed, nextDay, type Rate } from "../lib/rates"
 
 export default function TodayTomorrow({
@@ -22,40 +22,78 @@ export default function TodayTomorrow({
   const carriedOver = tomorrowRate?.fixingDate === todayRate.fixingDate
 
   return (
-    <section className="px-4 pb-10 pt-12">
-      <h1 className="text-center text-4xl font-bold tracking-tight">
-        면세점 적용환율
-      </h1>
-
-      <div className="mt-8 flex items-start justify-center gap-12">
-        <div className="text-center">
-          <div className="text-sm font-medium text-slate-500">오늘</div>
-          <div className="mt-1 text-4xl font-bold tabular-nums">
+    <section className="px-4 pt-10">
+      {/* 오늘과 내일은 같은 크기다. 둘 중 하나를 키우면 비교가 아니라
+          발표가 된다 — 방문자가 알고 싶은 건 두 값의 차이다. */}
+      <div className="flex items-start gap-4 sm:gap-[34px]">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold">오늘</span>
+            <span className="bg-ink px-2 py-0.5 text-[11px] font-bold text-paper">
+              적용 중
+            </span>
+          </div>
+          <div className="font-num text-[32px] font-semibold leading-[0.92] tracking-[-0.03em] tabular-nums sm:text-[58px]">
             {formatRate(todayRate.rate)}
+          </div>
+          <div className="text-xs text-muted">
+            {formatMonthDay(todayRate.fixingDate)} 08시 고시
           </div>
         </div>
 
-        <div className="text-center">
-          <div className="text-sm font-medium text-slate-500">내일</div>
+        {/* 두 값이 같은 날에도 이 칸은 비워 두지 않는다. 58px 숫자 둘이
+            맞붙으면 한 덩어리로 읽힌다. */}
+        {delta === 0 && (
+          <div
+            className="mt-[18px] h-14 w-px shrink-0 bg-rule sm:mt-[34px]"
+            aria-hidden="true"
+          />
+        )}
+
+        {delta !== null && delta !== 0 && (
+          <div className="flex shrink-0 flex-col items-center gap-1 pt-[18px] sm:pt-[34px]">
+            <svg width="26" height="10" viewBox="0 0 26 10" aria-hidden="true">
+              <path
+                d="M0 5 H18 M14 1 L20 5 L14 9"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                className={delta > 0 ? "text-up" : "text-down"}
+              />
+            </svg>
+            <div
+              className={
+                delta > 0
+                  ? "font-num text-[15px] font-semibold tabular-nums text-up sm:text-[17px]"
+                  : "font-num text-[15px] font-semibold tabular-nums text-down sm:text-[17px]"
+              }
+            >
+              {delta > 0 ? "▲" : "▼"} {formatRate(Math.abs(delta))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold">내일</span>
+            {tomorrowRate && (
+              <span className="border border-ink px-1.5 py-px text-[11px] font-bold">
+                확정
+              </span>
+            )}
+          </div>
           {tomorrowRate ? (
             <>
-              <div className="mt-1 text-4xl font-bold tabular-nums">
+              <div className="font-num text-[32px] font-semibold leading-[0.92] tracking-[-0.03em] tabular-nums sm:text-[58px]">
                 {formatRate(tomorrowRate.rate)}
               </div>
-              {delta !== null && delta !== 0 && (
-                <div
-                  className={
-                    delta > 0
-                      ? "mt-1 text-sm text-rose-600 tabular-nums"
-                      : "mt-1 text-sm text-blue-600 tabular-nums"
-                  }
-                >
-                  {delta > 0 ? "▲" : "▼"} {formatRate(Math.abs(delta))}
-                </div>
-              )}
+              <div className="text-xs text-muted">
+                {formatMonthDay(tomorrowRate.fixingDate)} 08시 고시 · 바뀌지
+                않습니다
+              </div>
             </>
           ) : (
-            <div className="mt-3 text-sm text-slate-400">
+            <div className="pt-2 text-sm text-muted">
               아직 고시되지 않았습니다
             </div>
           )}
@@ -63,20 +101,25 @@ export default function TodayTomorrow({
       </div>
 
       {delta !== null && (
-        <p className="mt-8 text-center text-lg text-slate-700">
+        <p className="mt-6 text-[19px] sm:text-[22px]">
           {delta === 0
             ? "내일도 오늘과 같습니다."
-            : `내일은 오늘보다 ${delta > 0 ? "비쌉니다" : "쌉니다"}.`}
+            : `내일은 오늘보다 ${formatAmount(Math.abs(delta))}원 ${
+                delta > 0 ? "비쌉니다" : "쌉니다"
+              }.`}
           {delta === 0 && carriedOver && (
-            <span className="mt-1 block text-sm text-slate-500">
+            <span className="mt-1 block text-[13px] text-muted">
               주말·공휴일에는 새 고시가 없어 직전 고시가 그대로 이어집니다.
             </span>
           )}
         </p>
       )}
 
-      <p className="mt-4 text-center text-sm">
-        <a href="#/guide" className="text-slate-500 underline underline-offset-2">
+      <p className="mt-5 text-[13px]">
+        <a
+          href="#/guide"
+          className="text-sub underline underline-offset-[3px]"
+        >
           면세점 환율은 어떻게 정해지나요?
         </a>
       </p>

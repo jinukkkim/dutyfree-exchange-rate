@@ -21,6 +21,11 @@ const TOOLTIP = { width: 150, height: 22 }
 
 type Point = { date: string; rate: number; method: Rate["method"] }
 
+/** "2026-08-19" → "08.19". 축 눈금은 연도를 적을 자리가 없다. */
+function monthDay(iso: string): string {
+  return iso.slice(5).replace("-", ".")
+}
+
 /** 방법론이 바뀌는 지점에서 끊는다. MAR 과 TWAP 은 같은 선으로 이으면 안 된다. */
 function splitByMethod(points: Point[]): Point[][] {
   const segments: Point[][] = []
@@ -83,9 +88,9 @@ export default function RateChart({
   // (2017 추석 11일, 2025 추석 8일). 버튼은 남기고 안내만 바꾼다.
   if (visible.length < 2) {
     return (
-      <section className="px-4 py-8">
+      <section className="px-4 pt-[52px]">
         <ChartHeader days={days} setDays={setDays} />
-        <p className="py-10 text-center text-sm text-slate-400">
+        <p className="py-10 text-center text-sm text-muted">
           이 구간에는 고시가 없습니다. 더 긴 구간을 선택해 주세요.
         </p>
       </section>
@@ -136,7 +141,7 @@ export default function RateChart({
   const hovered = hover === null ? null : visible[hover]
 
   return (
-    <section className="px-4 py-8">
+    <section className="px-4 pt-[52px]">
       <ChartHeader days={days} setDays={setDays} />
 
       <svg
@@ -152,12 +157,25 @@ export default function RateChart({
         }}
         onTouchEnd={() => setHover(null)}
       >
-        <text x={4} y={PAD.top + 4} className="fill-slate-400 text-[10px]">
+        <text x={4} y={PAD.top + 4} className="fill-muted text-[10px]">
           {formatRate(max)}
         </text>
-        <text x={4} y={HEIGHT - PAD.bottom} className="fill-slate-400 text-[10px]">
+        <text x={4} y={HEIGHT - PAD.bottom} className="fill-muted text-[10px]">
           {formatRate(min)}
         </text>
+
+        {/* 오늘이 어디인지 그어 준다. 이 선 오른쪽은 아직 겪지 않은 날이다. */}
+        {futureStart > 0 && (
+          <line
+            x1={x(futureStart - 1)}
+            y1={PAD.top}
+            x2={x(futureStart - 1)}
+            y2={HEIGHT - PAD.bottom}
+            stroke="currentColor"
+            strokeDasharray="2 3"
+            className="text-[#CDD2D4]"
+          />
+        )}
 
         {pastPaths.map((d, index) => (
           <path
@@ -167,7 +185,7 @@ export default function RateChart({
             fill="none"
             stroke="currentColor"
             strokeWidth={1.5}
-            className="text-slate-800"
+            className="text-ink"
           />
         ))}
 
@@ -182,7 +200,7 @@ export default function RateChart({
             stroke="currentColor"
             strokeWidth={1.5}
             strokeDasharray="4 3"
-            className="text-amber-500"
+            className="text-ink"
           />
         )}
 
@@ -192,8 +210,32 @@ export default function RateChart({
             cx={x(visible.length - 1)}
             cy={y(visible.at(-1)!.rate)}
             r={3.5}
-            className="fill-amber-500"
+            className="fill-ink"
           />
+        )}
+
+        <text x={PAD.left} y={HEIGHT - 8} className="fill-muted text-[10px]">
+          {monthDay(visible[0].date)}
+        </text>
+        {visible.length >= 6 && (
+          <text
+            x={x(Math.floor((visible.length - 1) / 2))}
+            y={HEIGHT - 8}
+            textAnchor="middle"
+            className="fill-muted text-[10px]"
+          >
+            {monthDay(visible[Math.floor((visible.length - 1) / 2)].date)}
+          </text>
+        )}
+        {futureStart > 0 && (
+          <text
+            x={x(futureStart - 1)}
+            y={HEIGHT - 8}
+            textAnchor="middle"
+            className="fill-sub text-[10px]"
+          >
+            오늘
+          </text>
         )}
 
         {hovered && (
@@ -204,9 +246,9 @@ export default function RateChart({
               x2={x(hover!)}
               y2={HEIGHT - PAD.bottom}
               stroke="currentColor"
-              className="text-slate-300"
+              className="text-[#CDD2D4]"
             />
-            <circle cx={x(hover!)} cy={y(hovered.rate)} r={3} className="fill-slate-900" />
+            <circle cx={x(hover!)} cy={y(hovered.rate)} r={3} className="fill-ink" />
             <rect
               x={Math.min(
                 Math.max(x(hover!) - TOOLTIP.width / 2, 0),
@@ -216,7 +258,7 @@ export default function RateChart({
               width={TOOLTIP.width}
               height={TOOLTIP.height}
               rx={4}
-              className="fill-slate-900"
+              className="fill-ink"
             />
             <text
               x={
@@ -228,7 +270,7 @@ export default function RateChart({
               }
               y={Math.max(y(hovered.rate) - TOOLTIP.height - 8, 0) + 15}
               textAnchor="middle"
-              className="fill-white text-[11px] tabular-nums"
+              className="fill-paper font-num text-[11px] tabular-nums"
             >
               {hovered.date} · {formatRate(hovered.rate)}
               {hovered.date > today ? " (내일)" : ""}
@@ -236,6 +278,20 @@ export default function RateChart({
           </g>
         )}
       </svg>
+
+      <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-[11.5px] text-muted">
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block w-4 border-t-[1.5px] border-ink" />
+          지나간 날
+        </span>
+        {futureStart !== -1 && (
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-4 border-t-[1.5px] border-dashed border-ink" />
+            내일 · 확정
+          </span>
+        )}
+        <span className="sm:ml-auto">x축은 적용일입니다</span>
+      </div>
     </section>
   )
 }
@@ -249,9 +305,9 @@ function ChartHeader({
   setDays: (days: number) => void
 }) {
   return (
-    <div className="mb-3 flex items-baseline justify-between">
-      <h2 className="text-base font-medium text-slate-700">적용환율 추이</h2>
-      <div className="flex gap-1">
+    <div className="mb-2.5 flex items-baseline justify-between">
+      <h2 className="text-[15px] font-bold text-sub">적용환율 추이</h2>
+      <div className="flex gap-0.5">
         {RANGES.map((range) => (
           <button
             key={range.label}
@@ -259,8 +315,8 @@ function ChartHeader({
             onClick={() => setDays(range.days)}
             className={
               days === range.days
-                ? "rounded bg-slate-900 px-2 py-1 text-xs text-white"
-                : "rounded px-2 py-1 text-xs text-slate-500 hover:bg-slate-100"
+                ? "bg-ink px-2 py-1 text-xs font-medium text-paper"
+                : "px-2 py-1 text-xs font-medium text-muted hover:bg-black/5"
             }
           >
             {range.label}

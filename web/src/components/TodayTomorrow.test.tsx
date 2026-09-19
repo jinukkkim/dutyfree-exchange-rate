@@ -16,10 +16,26 @@ test("오늘과 내일 적용환율을 2자리로 보여준다", () => {
   expect(screen.getByText("1,368.30")).toBeInTheDocument()
 })
 
-test("어느 쪽이 비싼지 문장으로 말한다", () => {
+test("어느 쪽이 얼마나 비싼지 문장으로 말한다", () => {
   render(<TodayTomorrow rates={parseRates(CSV)} today="2026-09-17" />)
 
-  expect(screen.getByText(/내일은 오늘보다 비쌉니다/)).toBeInTheDocument()
+  expect(screen.getByText(/내일은 오늘보다 15원 비쌉니다/)).toBeInTheDocument()
+})
+
+test("오늘과 내일에 각자의 상태를 붙인다", () => {
+  render(<TodayTomorrow rates={parseRates(CSV)} today="2026-09-17" />)
+
+  expect(screen.getByText("적용 중")).toBeInTheDocument()
+  expect(screen.getByText("확정")).toBeInTheDocument()
+})
+
+test("고시가 없으면 확정 표시도 없다", () => {
+  const partial = parseRates(`fix_date,rate,method,source,collected_at
+2026-09-16,1353.3,MAR,smbs,2026-09-17T09:00:00+09:00
+`)
+  render(<TodayTomorrow rates={partial} today="2026-09-17" />)
+
+  expect(screen.queryByText("확정")).not.toBeInTheDocument()
 })
 
 test("환율 정보 페이지로 가는 링크를 둔다", () => {
