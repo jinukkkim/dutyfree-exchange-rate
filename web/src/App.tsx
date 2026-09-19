@@ -45,26 +45,28 @@ export default function App() {
   const today = todayKst()
 
   return (
-    <div className="min-h-screen bg-paper text-ink">
-      <div className="mx-auto max-w-2xl">
-        <main>
-          {route === "#/guide" ? (
+    <div className="flex min-h-screen flex-col bg-white text-ink">
+      <header className="flex h-12 items-center border-b border-rule bg-nav px-6">
+        <h1 className="mx-auto w-full max-w-page text-[13px] font-semibold tracking-[-0.01em]">
+          면세점 적용환율
+        </h1>
+      </header>
+
+      <main className="flex-grow">
+        {route === "#/guide" ? (
+          <div className="mx-auto max-w-2xl">
             <RateGuide />
-          ) : (
-            <>
-              <StalenessBanner rates={rates} now={new Date()} />
-              <header className="border-b border-rule px-4 pb-3.5 pt-[52px]">
-                <h1 className="text-[17px] font-bold tracking-[-0.01em]">
-                  면세점 적용환율
-                </h1>
-              </header>
-              <TodayTomorrow rates={rates} today={today} />
-              <RateChart rates={rates} today={today} />
-            </>
-          )}
-        </main>
-        <Footer />
-      </div>
+          </div>
+        ) : (
+          <>
+            <StalenessBanner rates={rates} now={new Date()} />
+            <TodayTomorrow rates={rates} today={today} />
+            <RateChart rates={rates} today={today} />
+          </>
+        )}
+      </main>
+
+      <Footer />
     </div>
   )
 }

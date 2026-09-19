@@ -2,25 +2,40 @@ export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
-      // 숫자는 Archivo, 한글은 Gothic A1. 폰트가 뜨기 전에도 레이아웃이
-      // 무너지지 않도록 대체 스택의 폭을 비슷하게 잡는다.
+      // 애플 시스템 서체를 그대로 쓴다. 맥·아이폰에서는 SF 와 Apple SD
+      // Gothic Neo 가 잡히고, 나머지 환경은 Noto Sans KR 로 떨어진다.
       fontFamily: {
-        sans: ['"Gothic A1"', "system-ui", "-apple-system", "sans-serif"],
-        num: ["Archivo", "system-ui", "-apple-system", "sans-serif"],
+        sans: [
+          "-apple-system",
+          "BlinkMacSystemFont",
+          '"SF Pro Text"',
+          '"Apple SD Gothic Neo"',
+          '"Noto Sans KR"',
+          "sans-serif",
+        ],
+        display: [
+          "-apple-system",
+          "BlinkMacSystemFont",
+          '"SF Pro Display"',
+          '"Apple SD Gothic Neo"',
+          '"Noto Sans KR"',
+          "sans-serif",
+        ],
       },
-      // 본문 배경(#F6F7F5) 위에서 전부 4.5:1 이상이 되도록 잡은 값들이다.
-      // 캡션 회색과 상승 빨강은 눈대중으로 고르면 거의 항상 기준에 못 미친다.
+      // 흰 바탕 위에서 전부 4.5:1 이상이다. #86868B(3.6:1)는 쓰지 않는다.
       colors: {
-        paper: "#F6F7F5",
-        ink: "#14171A",
-        sub: "#4B5257",
-        muted: "#676E74",   // 4.7:1
-        rule: "#E1E4E1",
-        navy: "#103A6B",   // 오늘→내일 화살표. 등락과 무관한 진행 표시다
-        up: "#C4322A",      // 5.0:1
-        down: "#2563C7",    // 5.1:1
-        fresh: "#1F7A4D",   // 4.9:1
+        ink: "#1D1D1F",
+        sub: "#424245",
+        muted: "#6E6E73",   // 5.1:1
+        rule: "#D2D2D7",
+        tint: "#F5F5F7",
+        nav: "#FBFBFD",
+        link: "#0066CC",    // 5.6:1
+        key: "#0071E3",     // 흰 글자와 4.7:1
+        up: "#D70015",      // 5.4:1
+        down: "#0066CC",
       },
+      maxWidth: { page: "980px" },
     },
   },
   plugins: [],

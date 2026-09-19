@@ -87,9 +87,9 @@ export default function RateChart({
   // (2017 추석 11일, 2025 추석 8일). 버튼은 남기고 안내만 바꾼다.
   if (visible.length < 2) {
     return (
-      <section className="px-4 pt-[52px]">
+      <section className="px-6 py-[76px] text-center">
         <ChartHeader days={days} setDays={setDays} />
-        <p className="py-10 text-center text-sm text-muted">
+        <p className="py-10 text-[17px] text-muted">
           이 구간에는 고시가 없습니다. 더 긴 구간을 선택해 주세요.
         </p>
       </section>
@@ -144,12 +144,12 @@ export default function RateChart({
   const showToday = futureStart > 0 && days === RANGES[0].days
 
   return (
-    <section className="px-4 pt-[52px]">
+    <section className="px-6 py-[76px] text-center">
       <ChartHeader days={days} setDays={setDays} />
 
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-        className="w-full touch-none"
+        className="mx-auto mt-7 block w-full max-w-page touch-none"
         role="img"
         aria-label={`적용환율 추이, 최저 ${formatRate(min)} 최고 ${formatRate(max)}`}
         onMouseMove={(event) => pointAt(event.clientX, event.currentTarget)}
@@ -176,7 +176,7 @@ export default function RateChart({
             y2={HEIGHT - PAD.bottom}
             stroke="currentColor"
             strokeDasharray="2 3"
-            className="text-[#CDD2D4]"
+            className="text-rule"
           />
         )}
 
@@ -202,7 +202,7 @@ export default function RateChart({
             stroke="currentColor"
             strokeWidth={1.5}
             strokeDasharray="4 3"
-            className="text-ink"
+            className="text-key"
           />
         )}
 
@@ -238,7 +238,7 @@ export default function RateChart({
               x2={x(hover!)}
               y2={HEIGHT - PAD.bottom}
               stroke="currentColor"
-              className="text-[#CDD2D4]"
+              className="text-rule"
             />
             <circle cx={x(hover!)} cy={y(hovered.rate)} r={3} className="fill-ink" />
             <rect
@@ -262,7 +262,7 @@ export default function RateChart({
               }
               y={Math.max(y(hovered.rate) - TOOLTIP.height - 8, 0) + 15}
               textAnchor="middle"
-              className="fill-paper font-num text-[11px] tabular-nums"
+              className="fill-white text-[11px] tabular-nums"
             >
               {hovered.date} · {formatRate(hovered.rate)}
               {hovered.date > today ? " (내일)" : ""}
@@ -284,9 +284,11 @@ function ChartHeader({
   setDays: (days: number) => void
 }) {
   return (
-    <div className="mb-2.5 flex items-baseline justify-between">
-      <h2 className="text-[15px] font-bold text-sub">적용환율 추이</h2>
-      <div className="flex gap-0.5">
+    <div className="mx-auto max-w-page">
+      <h2 className="font-display text-[28px] font-semibold tracking-[-0.02em] sm:text-[40px]">
+        적용환율 추이
+      </h2>
+      <div className="mt-8 inline-flex flex-wrap justify-center gap-2">
         {RANGES.map((range) => (
           <button
             key={range.label}
@@ -294,8 +296,8 @@ function ChartHeader({
             onClick={() => setDays(range.days)}
             className={
               days === range.days
-                ? "bg-ink px-2 py-1 text-xs font-medium text-paper"
-                : "px-2 py-1 text-xs font-medium text-muted hover:bg-black/5"
+                ? "rounded-full bg-key px-[18px] py-2 text-[15px] font-medium tracking-[-0.01em] text-white"
+                : "rounded-full px-[18px] py-2 text-[15px] font-medium tracking-[-0.01em] text-ink hover:bg-black/5"
             }
           >
             {range.label}
