@@ -29,9 +29,7 @@ export default function TodayTomorrow({
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold">오늘</span>
-            <span className="bg-ink px-2 py-0.5 text-[11px] font-bold text-paper">
-              적용 중
-            </span>
+            <span className="text-[13px] text-muted">{formatMonthDay(today)}</span>
           </div>
           <div className="font-num text-[32px] font-semibold leading-[0.92] tracking-[-0.03em] tabular-nums sm:text-[58px]">
             {formatRate(todayRate.rate)}
@@ -76,11 +74,9 @@ export default function TodayTomorrow({
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold">내일</span>
-            {tomorrowRate && (
-              <span className="border border-ink px-1.5 py-px text-[11px] font-bold">
-                확정
-              </span>
-            )}
+            <span className="text-[13px] text-muted">
+              {formatMonthDay(nextDay(today))}
+            </span>
           </div>
           {tomorrowRate ? (
             <>

@@ -22,20 +22,21 @@ test("어느 쪽이 얼마나 비싼지 문장으로 말한다", () => {
   expect(screen.getByText(/내일은 오늘보다 15원 비쌉니다/)).toBeInTheDocument()
 })
 
-test("오늘과 내일에 각자의 상태를 붙인다", () => {
+test("오늘과 내일에 각자의 적용일을 붙인다", () => {
   render(<TodayTomorrow rates={parseRates(CSV)} today="2026-09-17" />)
 
-  expect(screen.getByText("적용 중")).toBeInTheDocument()
-  expect(screen.getByText("확정")).toBeInTheDocument()
+  expect(screen.getByText("9월 17일")).toBeInTheDocument()
+  expect(screen.getByText("9월 18일")).toBeInTheDocument()
 })
 
-test("고시가 없으면 확정 표시도 없다", () => {
-  const partial = parseRates(`fix_date,rate,method,source,collected_at
-2026-09-16,1353.3,MAR,smbs,2026-09-17T09:00:00+09:00
+test("달을 넘어가도 내일 날짜가 맞는다", () => {
+  const monthEnd = parseRates(`fix_date,rate,method,source,collected_at
+2026-09-29,1350,MAR,smbs,2026-09-30T09:00:00+09:00
+2026-09-30,1360,MAR,smbs,2026-10-01T09:00:00+09:00
 `)
-  render(<TodayTomorrow rates={partial} today="2026-09-17" />)
+  render(<TodayTomorrow rates={monthEnd} today="2026-09-30" />)
 
-  expect(screen.queryByText("확정")).not.toBeInTheDocument()
+  expect(screen.getByText("10월 1일")).toBeInTheDocument()
 })
 
 test("환율 정보 페이지로 가는 링크를 둔다", () => {
