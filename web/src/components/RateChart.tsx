@@ -87,7 +87,7 @@ export default function RateChart({
   // (2017 추석 11일, 2025 추석 8일). 버튼은 남기고 안내만 바꾼다.
   if (visible.length < 2) {
     return (
-      <section className="bg-tint px-6 py-16 text-center">
+      <section className="px-6 py-16 text-center">
         <ChartHeader days={days} setDays={setDays} />
         <p className="py-10 text-[17px] text-muted">
           이 구간에는 고시가 없습니다. 더 긴 구간을 선택해 주세요.
@@ -142,10 +142,10 @@ export default function RateChart({
   const showToday = futureStart > 0 && days === RANGES[0].days;
 
   return (
-    <section className="bg-tint px-6 py-16 text-center">
+    <section className="px-6 py-16 text-center">
       <ChartHeader days={days} setDays={setDays} />
 
-      <div className="mx-auto mt-8 max-w-page rounded-[28px] bg-white px-6 pb-4 pt-8">
+      <div className="mx-auto mt-8 max-w-page px-6 pb-4">
         <svg
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
           className="mx-auto block w-full max-w-chart touch-none"
