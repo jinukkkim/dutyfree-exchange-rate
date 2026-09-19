@@ -18,13 +18,13 @@ export default function TodayTomorrow({
   const delta = tomorrowRate ? tomorrowRate.rate - todayRate.rate : null
 
   return (
-    <section className="px-6 pb-20 pt-14 text-center sm:pb-24 sm:pt-[88px]">
-      <div className="mx-auto flex max-w-page items-center justify-center gap-4 sm:gap-14">
+    <section className="px-6 pb-20 pt-14 text-center sm:pb-[88px] sm:pt-20">
+      <div className="mx-auto flex max-w-page items-center justify-center gap-4 sm:gap-10">
         <div>
           <div className="text-[15px] tracking-[-0.01em] text-muted sm:text-[17px]">
             {`오늘 · ${formatDayLabel(today)}`}
           </div>
-          <div className="mt-2.5 font-display text-[34px] font-semibold leading-none tracking-[-0.035em] tabular-nums sm:text-[52px] lg:text-[76px]">
+          <div className="mt-2.5 font-display text-[30px] font-semibold leading-none tracking-[-0.035em] tabular-nums sm:text-[44px] lg:text-[56px]">
             {formatRate(todayRate.rate)}
           </div>
         </div>
@@ -33,7 +33,7 @@ export default function TodayTomorrow({
             오르고 내린 것은 아래 숫자가 말한다. 값이 같은 날에도 칸은
             그대로 있어야 큰 숫자 둘이 맞붙지 않는다. */}
         {delta !== null && (
-          <div className="flex shrink-0 flex-col items-center gap-2 pt-6">
+          <div className="flex shrink-0 flex-col items-center gap-2.5 pt-5">
             <svg width="34" height="12" viewBox="0 0 34 12" aria-hidden="true">
               <path
                 d="M0 6 H25 M20 1.5 L27 6 L20 10.5"
@@ -44,8 +44,12 @@ export default function TodayTomorrow({
               />
             </svg>
             <div
-              className={`text-[15px] font-semibold tabular-nums sm:text-[19px] ${
-                delta > 0 ? "text-up" : delta < 0 ? "text-down" : "text-muted"
+              className={`rounded-full px-3.5 py-1.5 text-[14px] font-semibold tabular-nums sm:text-[17px] ${
+                delta > 0
+                  ? "bg-upTint text-up"
+                  : delta < 0
+                    ? "bg-downTint text-down"
+                    : "bg-flatTint text-muted"
               }`}
             >
               {`${delta > 0 ? "▲ " : delta < 0 ? "▼ " : ""}${formatRate(
@@ -60,7 +64,7 @@ export default function TodayTomorrow({
             {`내일 · ${formatDayLabel(nextDay(today))}`}
           </div>
           {tomorrowRate ? (
-            <div className="mt-2.5 font-display text-[34px] font-semibold leading-none tracking-[-0.035em] tabular-nums sm:text-[52px] lg:text-[76px]">
+            <div className="mt-2.5 font-display text-[30px] font-semibold leading-none tracking-[-0.035em] tabular-nums sm:text-[44px] lg:text-[56px]">
               {formatRate(tomorrowRate.rate)}
             </div>
           ) : (

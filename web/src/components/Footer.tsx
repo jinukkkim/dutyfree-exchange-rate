@@ -3,7 +3,7 @@ const GITHUB_URL = "https://github.com/jinukkkim/dutyfree-exchange-rate"
 
 export default function Footer() {
   return (
-    <footer className="bg-tint px-6 pb-14 pt-11">
+    <footer className="px-6 pb-14 pt-11">
       <div className="mx-auto max-w-page">
         <p className="max-w-[720px] text-xs leading-relaxed text-muted">
           보세판매장 운영에 관한 고시 제3조제4항에 따라, 서울외국환중개가

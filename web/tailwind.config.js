@@ -32,10 +32,13 @@ export default {
         nav: "#FBFBFD",
         link: "#0066CC",    // 5.6:1
         key: "#0071E3",     // 흰 글자와 4.7:1
-        up: "#D70015",      // 5.4:1
-        down: "#0066CC",
+        up: "#C4001A",
+        down: "#0B4EC2",
+        upTint: "#FFE9E9",
+        downTint: "#E7EFFF",
+        flatTint: "#F0F0F2",
       },
-      maxWidth: { page: "980px" },
+      maxWidth: { page: "820px", chart: "720px" },
     },
   },
   plugins: [],
