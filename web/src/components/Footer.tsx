@@ -3,12 +3,12 @@ const GITHUB_URL = "https://github.com/jinukkkim/dutyfree-exchange-rate"
 
 export default function Footer() {
   return (
-    <footer className="mt-8 border-t px-4 py-8 text-sm text-slate-500">
-      <nav className="flex justify-center gap-6">
-        <a href={REPORT_URL} className="underline underline-offset-2" target="_blank" rel="noopener noreferrer">
+    <footer className="bg-tint px-6 pb-14 pt-11">
+      <nav className="mx-auto flex max-w-page gap-[22px] text-xs">
+        <a href={REPORT_URL} className="text-link hover:underline" target="_blank" rel="noopener noreferrer">
           제보하기
         </a>
-        <a href={GITHUB_URL} className="underline underline-offset-2" target="_blank" rel="noopener noreferrer">
+        <a href={GITHUB_URL} className="text-link hover:underline" target="_blank" rel="noopener noreferrer">
           GitHub
         </a>
       </nav>

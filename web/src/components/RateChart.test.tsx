@@ -38,7 +38,7 @@ test("데이터 포인트만큼 선을 그린다", () => {
 
 test("기간 선택 버튼을 제공한다", () => {
   render(<RateChart rates={RATES} today={AFTER} />)
-  for (const label of ["1주", "1개월", "6개월", "1년", "5년"]) {
+  for (const label of ["1개월", "6개월", "1년", "5년", "전체"]) {
     expect(screen.getByRole("button", { name: label })).toBeInTheDocument()
   }
 })
@@ -91,36 +91,36 @@ test("주말에도 내일 구간을 그린다", () => {
   expect(container.querySelector("path[data-testid='rate-line-future']")).toBeTruthy()
 })
 
-test("방법론 경계에 걸린 날에도 내일 표식은 남는다", () => {
+test("오늘 표시는 1개월 구간에만 둔다", () => {
+  render(<RateChart rates={RATES} today="2026-09-17" />)
+
+  expect(screen.getByText("오늘")).toBeInTheDocument()
+
+  fireEvent.click(screen.getByRole("button", { name: "전체" }))
+
+  expect(screen.queryByText("오늘")).not.toBeInTheDocument()
+})
+
+test("방법론 경계에 걸린 날에는 내일 구간을 잇지 않는다", () => {
   // 2027-01-01 TWAP 전환. 이 하루는 오늘(MAR 적용)과 내일(TWAP 적용)이 경계를
-  // 사이에 두고 갈린다. 이을 수 없는 것은 **선**이지 점이 아니다 — 점선만 빠지고
-  // 내일 점은 남아야 한다. 하나의 가드로 묶으면 이 날만 미래 표식이 사라진다.
+  // 사이에 두고 갈린다. 값의 성격이 다르므로 한 선으로 이어서는 안 된다.
   const boundary = [make("2026-12-30", 1400), make("2026-12-31", 1405), make("2027-01-01", 1390, "TWAP")]
   const { container } = render(<RateChart rates={boundary} today="2027-01-01" />)
 
   expect(container.querySelector("path[data-testid='rate-line-future']")).toBeNull()
-  expect(container.querySelector("circle[data-testid='rate-point-future']")).toBeTruthy()
 })
 
-test("방법론이 이어지는 날에는 점선과 점이 함께 나온다", () => {
-  const { container } = render(<RateChart rates={RATES} today="2026-09-17" />)
+test("그릴 점이 모자라도 구간 버튼으로 빠져나갈 수 있다", () => {
+  // 점이 하나뿐이면 선을 그릴 수 없다. 이때 섹션을 통째로 지우면 다른 구간으로
+  // 바꿀 버튼까지 사라져 빠져나갈 길이 없어진다.
+  const sparse = [make("2025-08-01", 1400), make("2025-10-10", 1410)]
+  const { container } = render(<RateChart rates={sparse} today="2025-10-20" />)
 
-  expect(container.querySelector("path[data-testid='rate-line-future']")).toBeTruthy()
-  expect(container.querySelector("circle[data-testid='rate-point-future']")).toBeTruthy()
-})
-
-test("연휴로 고시가 비어도 구간 버튼은 남는다", () => {
-  // 실제로 있었던 공백이다 — 2025 추석은 10-02 → 10-10 로 8 일이 빈다.
-  // "1주" 로 자르면 점이 하나뿐이라 선을 못 그리는데, 이때 섹션을 통째로
-  // 지우면 다른 구간으로 바꿀 버튼까지 사라져 빠져나갈 길이 없어진다.
-  const holiday = [make("2025-10-02", 1400), make("2025-10-10", 1410)]
-  render(<RateChart rates={holiday} today="2025-10-20" />)
-
-  fireEvent.click(screen.getByRole("button", { name: "1주" }))
-
-  expect(screen.getByRole("button", { name: "1주" })).toBeInTheDocument()
-  expect(screen.getByRole("button", { name: "1년" })).toBeInTheDocument()
   expect(screen.getByText(/이 구간에는 고시가 없습니다/)).toBeInTheDocument()
+
+  fireEvent.click(screen.getByRole("button", { name: "전체" }))
+
+  expect(container.querySelector("path[data-testid='rate-line']")).toBeTruthy()
 })
 
 test("전체 구간은 가장 오래된 고시까지 그린다", () => {
