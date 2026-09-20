@@ -40,16 +40,24 @@ function useHashRoute(): string {
   return hash
 }
 
+const SITE_TITLE =
+  "mx-auto w-full max-w-page text-[13px] font-semibold tracking-[-0.01em]"
+
 export default function App() {
   const route = useHashRoute()
   const today = todayKst()
 
   return (
     <div className="flex min-h-screen flex-col bg-white text-ink">
+      {/* 내비 바의 제목은 본문 라우트에서만 h1 이다. 가이드 페이지는 자기
+          h1 을 이미 갖고 있어서, 여기서도 h1 을 내면 한 화면에 최상위 제목이
+          둘이 되고 헤딩으로 훑는 사용자가 어느 쪽이 페이지 제목인지 알 수 없다. */}
       <header className="flex h-12 items-center border-b border-rule bg-nav px-6">
-        <h1 className="mx-auto w-full max-w-page text-[13px] font-semibold tracking-[-0.01em]">
-          면세점 적용환율
-        </h1>
+        {route === "#/guide" ? (
+          <div className={SITE_TITLE}>면세점 적용환율</div>
+        ) : (
+          <h1 className={SITE_TITLE}>면세점 적용환율</h1>
+        )}
       </header>
 
       <main className="flex-grow">
