@@ -47,6 +47,17 @@ test("오르면 차액을 빨강으로, 같으면 회색으로 적는다", () =>
   expect(screen.getByText("▲ 15.00")).toHaveClass("text-up")
 })
 
+test("두 값이 같으면 차액을 회색으로 적는다", () => {
+  // 2026-09-19 는 토요일. 09-18 고시가 토·일 이틀을 덮으므로 두 값이 같다.
+  const weekend = parseRates(`fix_date,rate,method,source,collected_at
+2026-09-17,1368.3,MAR,smbs,2026-09-18T09:00:00+09:00
+2026-09-18,1380.3,MAR,smbs,2026-09-19T09:00:00+09:00
+`)
+  render(<TodayTomorrow rates={weekend} today="2026-09-19" />)
+
+  expect(screen.getByText("0.00")).toHaveClass("text-muted")
+})
+
 test("내일 고시가 아직 없으면 오늘만 보여준다", () => {
   const partial = parseRates(`fix_date,rate,method,source,collected_at
 2026-09-16,1353.3,MAR,smbs,2026-09-17T09:00:00+09:00
