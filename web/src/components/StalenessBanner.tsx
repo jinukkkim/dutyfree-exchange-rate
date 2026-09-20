@@ -14,7 +14,7 @@ export default function StalenessBanner({
   return (
     <div
       role="status"
-      className="bg-amber-100 px-4 py-3 text-center text-sm text-amber-900"
+      className="border-b border-rule bg-warnTint px-6 py-3 text-center text-[13px] text-warn"
     >
       ⚠ 이 데이터는 {latest.collectedAt.slice(0, 10)} 이후 갱신되지 않았습니다.
     </div>
