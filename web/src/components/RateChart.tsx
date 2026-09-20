@@ -209,9 +209,18 @@ export default function RateChart({
             />
           )}
 
-          <text x={PAD.left} y={HEIGHT - 8} className="fill-muted text-[10px]">
-            {monthDay(visible[0].date)}
-          </text>
+          {/* futureStart 가 1 이면 "오늘" 눈금이 첫 점과 같은 x 에 놓인다 —
+              연휴 직후 1개월 구간에 지나간 점이 하나뿐일 때 실제로 생긴다.
+              그때는 날짜보다 "오늘"이 필요한 정보라 날짜 쪽을 접는다. */}
+          {!(showToday && futureStart === 1) && (
+            <text
+              x={PAD.left}
+              y={HEIGHT - 8}
+              className="fill-muted text-[10px]"
+            >
+              {monthDay(visible[0].date)}
+            </text>
+          )}
           {visible.length >= 6 && (
             <text
               x={x(Math.floor((visible.length - 1) / 2))}
