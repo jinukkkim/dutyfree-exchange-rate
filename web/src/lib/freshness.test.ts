@@ -2,17 +2,33 @@ import { expect, test } from "vitest"
 
 import { isStale } from "./freshness"
 
-const COLLECTED = "2026-09-18T09:00:00+09:00"
-
-test("방금 수집된 데이터는 신선하다", () => {
-  expect(isStale(COLLECTED, new Date("2026-09-18T10:00:00+09:00"))).toBe(false)
+test("어제 고시가 있으면 신선하다", () => {
+  expect(isStale("2026-09-17", "2026-09-18")).toBe(false)
 })
 
-test("주말을 건너뛴 정도는 신선하다", () => {
-  // 금요일 수집 후 월요일 방문. 크론은 매일 돌지만 여유를 둔다.
-  expect(isStale(COLLECTED, new Date("2026-09-20T12:00:00+09:00"))).toBe(false)
+test("월요일 아침에 금요일 고시는 신선하다", () => {
+  // 주말에는 애초에 고시가 없고, 오늘 고시는 아직 나오기 전이다.
+  expect(isStale("2026-09-18", "2026-09-21")).toBe(false)
 })
 
-test("사흘 넘게 갱신이 없으면 낡은 것으로 본다", () => {
-  expect(isStale(COLLECTED, new Date("2026-09-22T12:00:00+09:00"))).toBe(true)
+test("최장 연휴만큼 비는 것은 신선하다", () => {
+  // 2017 추석(9/30~10/9) 재현. 9/29 금요일 고시 후 10/10 화요일 방문 —
+  // 평일 6일이 비었지만 전부 공휴일이었다. 여기서 낡음을 띄우면 오탐이다.
+  expect(isStale("2017-09-29", "2017-10-10")).toBe(false)
+})
+
+test("연휴보다 길게 고시가 없으면 낡은 것으로 본다", () => {
+  // 평일 7일. 어떤 연휴로도 설명되지 않으므로 원본이나 수집이 멈춘 것이다.
+  expect(isStale("2017-09-29", "2017-10-11")).toBe(true)
+})
+
+test("고시가 아예 없거나 날짜가 깨졌으면 낡은 것으로 본다", () => {
+  expect(isStale(undefined, "2026-09-18")).toBe(true)
+  expect(isStale("무슨날", "2026-09-18")).toBe(true)
+})
+
+test("고시일이 오늘 이후여도 낡지 않다", () => {
+  // 방문자 시계가 어긋나거나 KST 보다 뒤처진 타임존일 때. 음수 간격이 루프를
+  // 돌게 만들면 안 된다.
+  expect(isStale("2026-09-18", "2026-09-15")).toBe(false)
 })

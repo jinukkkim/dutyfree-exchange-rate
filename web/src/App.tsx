@@ -6,7 +6,6 @@ import ratesCsv from "../../data/rates.csv?raw"
 import Footer from "./components/Footer"
 import RateChart from "./components/RateChart"
 import RateGuide from "./components/RateGuide"
-import StalenessBanner from "./components/StalenessBanner"
 import TodayTomorrow from "./components/TodayTomorrow"
 import { parseRates } from "./lib/rates"
 
@@ -68,7 +67,6 @@ export default function App() {
           </div>
         ) : (
           <>
-            <StalenessBanner rates={rates} now={new Date()} />
             <TodayTomorrow rates={rates} today={today} />
             <RateChart rates={rates} today={today} />
           </>

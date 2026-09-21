@@ -32,8 +32,6 @@ export default {
         nav: "#FBFBFD",
         link: "#0066CC",    // 5.6:1
         key: "#0071E3",     // 흰 글자와 4.7:1
-        warn: "#8A5300",    // warnTint 위에서 5.8:1
-        warnTint: "#FFF3E0",
         up: "#C4001A",
         down: "#0B4EC2",
         upTint: "#FFE9E9",

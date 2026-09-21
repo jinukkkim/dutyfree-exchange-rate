@@ -1,3 +1,5 @@
+import { isBusinessDay, isStale } from "./freshness"
+
 export type Rate = {
   fixingDate: string // YYYY-MM-DD, 고시일 (적용일이 아니다)
   rate: number
@@ -56,12 +58,14 @@ export function nextDay(iso: string): string {
  *
  * 주말은 예외다. 애초에 고시가 없는 날이므로 직전 고시가 이어지는 것이
  * 확정이고, 여기서 "미고시"를 띄우면 토·일마다 틀린 안내가 나간다.
- * 공휴일은 주말과 구분하지 못한다 — 그 경우 값은 맞고 문구만 보수적이며,
- * 왜 최신 고시가 없는지는 신선도 배너가 설명한다.
+ * 공휴일은 주말과 구분하지 못한다 — 그 경우 값은 맞고 문구만 보수적이다.
+ *
+ * 단, 주말 예외는 데이터가 신선할 때만 성립한다. 고시가 며칠째 멈춘 상태에서는
+ * "직전 고시가 이어진다"는 전제 자체가 깨지므로, 토·일이라는 이유로 낡은 값을
+ * 확정이라고 부르면 안 된다. 그래서 신선도 판정이 맨 앞에 온다.
  */
 export function isTomorrowConfirmed(rates: Rate[], today: string): boolean {
-  const weekday = new Date(`${today}T00:00:00Z`).getUTCDay()
-  const isBusinessDay = weekday >= 1 && weekday <= 5
-  if (!isBusinessDay) return true
+  if (isStale(rates.at(-1)?.fixingDate, today)) return false
+  if (!isBusinessDay(new Date(`${today}T00:00:00Z`))) return true
   return rates.some((rate) => rate.fixingDate === today)
 }
