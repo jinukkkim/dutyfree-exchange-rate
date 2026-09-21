@@ -1,6 +1,0 @@
-# 이 박스는 Etc/UTC 로 돈다. cron 에는 CRON_TZ 가 없으므로 스케줄은 UTC 로 쓰고
-# 환산을 주석에 남긴다. 한국은 서머타임이 없어 KST = UTC+9 가 영구 고정이므로
-# 하드코딩해도 안전하다.
-#
-# 00:00 UTC = 09:00 KST — 매매기준율 고시(08:00 KST) 한 시간 뒤.
-0 0 * * * /home/ubuntu/duty-free-exchange-rate/deploy/collect.sh >> /home/ubuntu/dfx.log 2>&1

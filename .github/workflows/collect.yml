@@ -1,0 +1,48 @@
+name: Collect
+
+on:
+  schedule:
+    # 매시 17분. 정각을 피하는 이유는 Actions 스케줄이 정각에 전 세계가 몰려
+    # 수십 분씩 밀리기 때문이다. 어긋난 분이 예정 시각에 훨씬 가깝게 돈다.
+    #
+    # 왜 하루 1회가 아니라 매시간인지, 왜 창을 좁히지 않는지는 dfx/collect.py
+    # 모듈 docstring 에 적었다. 요약하면 공표 시각을 아무도 모르고, 이 스케줄
+    # 자체가 그것을 관측하는 수단이다.
+    - cron: '17 * * * *'
+  # 손으로 돌릴 수 있어야 한다. 고시가 늦거나 수집을 고친 날, 다음 크론까지
+  # 기다리면 검증이 24시간 뒤로 밀린다.
+  workflow_dispatch:
+
+permissions:
+  contents: write  # collect.py 가 직접 commit/push 한다
+
+# 손수 돌린 실행과 스케줄이 겹치면 둘 다 push 하려다 하나가 깨진다.
+# cancel-in-progress 는 쓰지 않는다 — 커밋 도중에 잘리는 편이 더 나쁘다.
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    # 수집은 HTTP 두 번이다. 10분을 넘겼다면 원본이 멈춘 것이므로 기본값
+    # 6시간을 붙들고 있을 이유가 없다.
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: collector/pyproject.toml
+
+      - run: pip install -e ./collector
+
+      # collect.py 가 git commit 을 부른다. 신원이 없으면 "Please tell me who
+      # you are" 로 죽는다.
+      - run: |
+          git config user.name "dfx collector"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - run: python -m dfx.collect
