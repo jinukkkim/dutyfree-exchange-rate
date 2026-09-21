@@ -23,6 +23,18 @@
  */
 export const STALE_AFTER_MISSED_FIXINGS = 6
 
+/**
+ * 고시가 나는 날인가. 공휴일 달력을 두지 않는 것이 이 프로젝트의 설계이므로
+ * 평일이면 참이다 — 연휴도 여기서는 고시가 있어야 할 날로 세어진다.
+ *
+ * 신선도(빠진 고시 세기)와 확정 판정(주말 예외)이 같은 정의를 써야 한다.
+ * 갈라 두면 반일 고시 같은 규칙이 생겼을 때 한쪽만 고쳐도 증상이 없다.
+ */
+export function isBusinessDay(date: Date): boolean {
+  const weekday = date.getUTCDay()
+  return weekday >= 1 && weekday <= 5
+}
+
 /** 마지막 고시 다음날부터 어제까지 고시가 없던 평일이 한계를 넘었는가. */
 export function isStale(
   latestFixingDate: string | undefined,
@@ -37,8 +49,7 @@ export function isStale(
   let missed = 0
   cursor.setUTCDate(cursor.getUTCDate() + 1)
   while (cursor.toISOString().slice(0, 10) < today) {
-    const weekday = cursor.getUTCDay()
-    if (weekday >= 1 && weekday <= 5) missed += 1
+    if (isBusinessDay(cursor)) missed += 1
     if (missed > STALE_AFTER_MISSED_FIXINGS) return true
     cursor.setUTCDate(cursor.getUTCDate() + 1)
   }

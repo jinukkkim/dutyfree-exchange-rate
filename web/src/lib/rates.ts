@@ -1,4 +1,4 @@
-import { isStale } from "./freshness"
+import { isBusinessDay, isStale } from "./freshness"
 
 export type Rate = {
   fixingDate: string // YYYY-MM-DD, 고시일 (적용일이 아니다)
@@ -66,8 +66,6 @@ export function nextDay(iso: string): string {
  */
 export function isTomorrowConfirmed(rates: Rate[], today: string): boolean {
   if (isStale(rates.at(-1)?.fixingDate, today)) return false
-  const weekday = new Date(`${today}T00:00:00Z`).getUTCDay()
-  const isBusinessDay = weekday >= 1 && weekday <= 5
-  if (!isBusinessDay) return true
+  if (!isBusinessDay(new Date(`${today}T00:00:00Z`))) return true
   return rates.some((rate) => rate.fixingDate === today)
 }
