@@ -30,6 +30,10 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          # collect.py 가 push 전에 rebase 한다. 기본값인 얕은 클론(depth 1)에서는
+          # 되감을 히스토리가 없다.
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:

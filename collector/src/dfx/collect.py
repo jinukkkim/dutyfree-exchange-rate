@@ -151,6 +151,10 @@ def main() -> int:
         cwd=REPO_ROOT,
         check=True,
     )
+    # 체크아웃은 잡 시작 시점의 스냅샷이다. 그 뒤 push 까지 사이에 main 이 움직이면
+    # non-fast-forward 로 거부되고, 데이터와 무관한 남의 머지 때문에 실패 메일이
+    # 날아간다. 지운 collect.sh 도 같은 이유로 push 전에 pull 을 먼저 했다.
+    subprocess.run(["git", "pull", "--rebase"], cwd=REPO_ROOT, check=True)
     subprocess.run(["git", "push"], cwd=REPO_ROOT, check=True)
     print(f"committed {changed} row(s), latest fixing {latest.isoformat()}")
     return 0
