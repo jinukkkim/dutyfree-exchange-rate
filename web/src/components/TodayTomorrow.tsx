@@ -17,9 +17,21 @@ export default function TodayTomorrow({
   /* 미확정인 이유가 둘이고, 방문자에게 같은 말이어서는 안 된다. 평일 아침에
      오늘 고시가 아직 없는 것은 정상이고 몇 시간 뒤 채워지지만, 고시가 며칠째
      멈춘 것은 고장이다. 후자에 "아직"이라고 쓰면 곧 나온다는 뜻이 되어,
-     사라진 신선도 배너가 하던 말이 거짓말로 대체된다. */
+     사라진 신선도 배너가 하던 말이 거짓말로 대체된다.
+
+     tomorrowRate 를 함께 보지 않는다 — isTomorrowConfirmed 가 이미 같은
+     신선도 판정을 맨 앞에서 하므로, 낡았으면 tomorrowRate 는 반드시 null 이다.
+     조건을 겹쳐 쓰면 없는 의존을 있는 것처럼 읽히게 만든다.
+
+     고시일이 비어 있어도 낡음은 낡음이다. 날짜를 못 붙일 뿐이므로 날짜 없는
+     문구로 내려간다. 여기서 "아직"으로 빠지면, CSV 가 깨져 날짜를 잃은 바로
+     그때 가장 태연한 거짓말을 하게 된다. */
   const latestFixing = rates.at(-1)?.fixingDate
-  const frozen = !tomorrowRate && isStale(latestFixing, today)
+  const tomorrowNotice = !isStale(latestFixing, today)
+    ? "아직 고시되지 않았습니다"
+    : latestFixing
+      ? `${formatDayLabel(latestFixing)} 이후 고시가 확인되지 않습니다`
+      : "고시가 확인되지 않습니다"
 
   if (!todayRate) return null
 
@@ -77,9 +89,7 @@ export default function TodayTomorrow({
             </div>
           ) : (
             <div className="mt-4 text-[15px] text-muted sm:text-[17px]">
-              {frozen && latestFixing
-                ? `${formatDayLabel(latestFixing)} 이후 고시가 확인되지 않습니다`
-                : "아직 고시되지 않았습니다"}
+              {tomorrowNotice}
             </div>
           )}
         </div>
