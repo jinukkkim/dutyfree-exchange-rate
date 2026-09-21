@@ -8,16 +8,15 @@
 
 - 도메인·용어·법령 근거: [`docs/domain-reference.md`](docs/domain-reference.md)
 - 설계: [`docs/superpowers/specs/`](docs/superpowers/specs/)
-- 운영: [`deploy/README.md`](deploy/README.md)
+- 운영: 수집은 GitHub Actions 가 매시간 돌린다 → [`.github/workflows/collect.yml`](.github/workflows/collect.yml)
 
 ## 구조
 
 | 경로 | 역할 |
 |---|---|
-| `collector/` | 서울외국환중개 수집기 (Python 3.12). VM 크론이 KST 09:00 에 실행 |
+| `collector/` | 서울외국환중개 수집기 (Python 3.12). GitHub Actions 가 매시간 실행 |
 | `data/` | CSV 아카이브. git 이 곧 저장소이자 백업이며 감사 이력 |
 | `web/` | 정적 사이트 (React + Vite). Vercel 이 data 커밋마다 재빌드 |
-| `deploy/` | 크론 래퍼와 운영 문서 |
 
 ## 개발
 
