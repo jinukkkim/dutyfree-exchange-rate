@@ -91,6 +91,17 @@ test("주말에도 내일 구간을 그린다", () => {
   expect(container.querySelector("path[data-testid='rate-line-future']")).toBeTruthy()
 })
 
+test("고시가 멈춘 주말에는 내일 구간을 그리지 않는다", () => {
+  // 위 테스트의 짝. 주말 예외만 보면 토·일에는 무조건 내일까지 잇는데,
+  // 고시가 멈춘 뒤 맞는 토요일에는 한 주 넘게 묵은 값을 내일 적용분처럼
+  // 그리게 된다. 마지막 고시 09-17 기준으로 빠진 평일이 한계를 넘는 첫
+  // 토요일이 10-03 이다 — 평일에 잡으면 "오늘 고시 없음" 분기로도 끊겨서
+  // 신선도 게이트가 근거인지 구별되지 않는다.
+  const { container } = render(<RateChart rates={RATES} today="2026-10-03" />)
+
+  expect(container.querySelector("path[data-testid='rate-line-future']")).toBeNull()
+})
+
 test("오늘 표시는 1개월 구간에만 둔다", () => {
   render(<RateChart rates={RATES} today="2026-09-17" />)
 
