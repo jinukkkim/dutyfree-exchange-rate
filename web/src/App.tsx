@@ -78,8 +78,8 @@ export default function App() {
       <Footer />
 
       {/* 운영 확인용 방문자 집계. 프로덕션에서만 전송하고 dev 에선 no-op 이다.
-          ponytail: 해시 라우트를 구분하지 못해 #/guide 가 / 로 뭉뚱그려진다.
-          가이드 조회수가 실제로 필요해지면 hashchange 마다 track() 을 쏜다. */}
+          해시 라우트를 구분하지 못해 #/guide 가 / 로 뭉뚱그려진다. 가이드
+          조회수가 실제로 필요해지면 hashchange 마다 track() 을 쏜다. */}
       <Analytics />
     </div>
   )
