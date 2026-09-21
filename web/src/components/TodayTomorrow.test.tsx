@@ -68,6 +68,20 @@ test("내일 고시가 아직 없으면 오늘만 보여준다", () => {
   expect(screen.getByText(/아직 고시되지 않았습니다/)).toBeInTheDocument()
 })
 
+test("고시가 멈춘 상태에서는 '아직'이라고 말하지 않는다", () => {
+  // 09-17 이 마지막 고시인 채로 맞은 10-03(토). 빠진 평일이 7일을 넘어
+  // 낡음이고, 이 상태에서 "아직"은 곧 나온다는 거짓말이 된다.
+  const frozen = parseRates(`fix_date,rate,method,source,collected_at
+2026-09-17,1368.3,MAR,smbs,2026-09-18T09:00:00+09:00
+`)
+  render(<TodayTomorrow rates={frozen} today="2026-10-03" />)
+
+  expect(
+    screen.getByText("9/17(목) 이후 고시가 확인되지 않습니다"),
+  ).toBeInTheDocument()
+  expect(screen.queryByText(/아직 고시되지 않았습니다/)).not.toBeInTheDocument()
+})
+
 test("주말에는 오늘 고시가 없어도 내일을 확정으로 보여준다", () => {
   // 2026-09-19 는 토요일. 고시는 09-18(금)이 마지막이고 토요일 고시는 영영 없다.
   // 일요일 적용환율은 그 금요일 고시로 확정이므로 "미고시"가 뜨면 안 된다.

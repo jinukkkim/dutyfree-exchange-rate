@@ -1,4 +1,5 @@
 import { formatDayLabel, formatRate } from "../lib/format"
+import { isStale } from "../lib/freshness"
 import { appliedOn, isTomorrowConfirmed, nextDay, type Rate } from "../lib/rates"
 
 export default function TodayTomorrow({
@@ -12,6 +13,13 @@ export default function TodayTomorrow({
   const tomorrowRate = isTomorrowConfirmed(rates, today)
     ? appliedOn(rates, nextDay(today))
     : null
+
+  /* 미확정인 이유가 둘이고, 방문자에게 같은 말이어서는 안 된다. 평일 아침에
+     오늘 고시가 아직 없는 것은 정상이고 몇 시간 뒤 채워지지만, 고시가 며칠째
+     멈춘 것은 고장이다. 후자에 "아직"이라고 쓰면 곧 나온다는 뜻이 되어,
+     사라진 신선도 배너가 하던 말이 거짓말로 대체된다. */
+  const latestFixing = rates.at(-1)?.fixingDate
+  const frozen = !tomorrowRate && isStale(latestFixing, today)
 
   if (!todayRate) return null
 
@@ -69,7 +77,9 @@ export default function TodayTomorrow({
             </div>
           ) : (
             <div className="mt-4 text-[15px] text-muted sm:text-[17px]">
-              아직 고시되지 않았습니다
+              {frozen && latestFixing
+                ? `${formatDayLabel(latestFixing)} 이후 고시가 확인되지 않습니다`
+                : "아직 고시되지 않았습니다"}
             </div>
           )}
         </div>
