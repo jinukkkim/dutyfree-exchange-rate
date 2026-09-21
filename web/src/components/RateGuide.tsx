@@ -8,7 +8,7 @@ export default function RateGuide() {
   return (
     <article className="px-4 pb-16 pt-10 text-slate-700">
       <p className="text-sm">
-        <a href="#/" className="text-slate-500 underline underline-offset-2">
+        <a href="/" className="text-slate-500 underline underline-offset-2">
           ← 오늘·내일 환율로 돌아가기
         </a>
       </p>
