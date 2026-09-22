@@ -1,0 +1,37 @@
+# collect.yml 을 매시간 깨우는 Cloudflare Cron Trigger. 왜 필요한지는
+# worker.js 주석에 있다.
+#
+# 배포 (이 디렉토리에서):
+#
+#   npx wrangler login
+#   npx wrangler secret put GH_TOKEN     # 토큰을 여기에 붙인다
+#   npx wrangler deploy
+#
+# 확인:
+#
+#   npx wrangler tail                    # 다음 매시 17 분에 호출이 찍힌다
+#   gh run list --workflow=collect.yml   # event 가 workflow_dispatch 로 뜬다
+#
+# GH_TOKEN 은 파인그레인드 PAT 이고, 권한은 이 저장소의 Actions: Read and write
+# 하나다. **저장소에도 이 파일에도 들어가지 않는다** — Cloudflare 시크릿으로만
+# 존재한다.
+#
+# contents 권한은 주지 않는다. 커밋은 워크플로 안의 GITHUB_TOKEN 이 하기
+# 때문이며, 그래서 이 토큰이 유출되어도 할 수 있는 일이 "이 워크플로를 반복
+# 실행" 으로 제한된다. 실행될 코드는 main 에서 오므로 바꿀 수 없고, public
+# 저장소라 러너도 무료다. 즉 스팸 실행이지 침해가 아니다.
+#
+# 만료일을 적어 둬라. 만료되면 dispatch 가 401 로 죽고 수집이 멈춘다.
+# watchdog.yml 이 24 시간 안에 알리지만, 알림을 받고 갱신하는 것은 사람이다.
+
+name = "dfx-collect-trigger"
+main = "worker.js"
+compatibility_date = "2026-09-22"
+
+# HTTP 라우트가 필요 없다. fetch 핸들러도 두지 않았으므로 공개 URL 을
+# 만들 이유가 없다.
+workers_dev = false
+
+[triggers]
+# collect.yml 과 같은 매시 17 분. 정각을 피하는 이유는 그쪽 주석에 있다.
+crons = ["17 * * * *"]
