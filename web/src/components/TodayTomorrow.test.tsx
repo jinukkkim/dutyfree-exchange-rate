@@ -38,7 +38,7 @@ test("환율 정보 페이지로 가는 링크를 둔다", () => {
 
   expect(
     screen.getByRole("link", { name: /환율이 정해지는 방식/ }),
-  ).toHaveAttribute("href", "#/guide")
+  ).toHaveAttribute("href", "/guide")
 })
 
 test("오르면 차액을 빨강으로, 같으면 회색으로 적는다", () => {

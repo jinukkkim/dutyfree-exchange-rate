@@ -1,5 +1,4 @@
 import { Analytics } from "@vercel/analytics/react"
-import { useEffect, useState } from "react"
 
 import ratesCsv from "../../data/rates.csv?raw"
 
@@ -23,28 +22,15 @@ function todayKst(): string {
   }).format(new Date())
 }
 
-/**
- * 페이지가 둘뿐이라 해시로 가른다. 라우터를 넣을 이유도, 정적 호스팅에
- * rewrite 규칙을 붙일 이유도 아직 없다.
- */
-function useHashRoute(): string {
-  const [hash, setHash] = useState(window.location.hash)
-  useEffect(() => {
-    const sync = () => setHash(window.location.hash)
-    window.addEventListener("hashchange", sync)
-    return () => window.removeEventListener("hashchange", sync)
-  }, [])
-  useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [hash])
-  return hash
-}
-
 const SITE_TITLE =
   "mx-auto w-full max-w-page text-[13px] font-semibold tracking-[-0.01em]"
 
 export default function App() {
-  const route = useHashRoute()
+  // 링크가 평범한 <a> 라서 페이지 전환이 곧 새 문서 로드다. 라우팅 상태도,
+  // 스크롤 리셋도 브라우저가 한다. 대신 /guide 직접 접속이 index.html 로
+  // 떨어져야 하고, 그 몫은 vercel.json 의 rewrite 가 진다.
+  // 끝의 / 를 떼어 /guide/ 도 같은 경로로 본다. "/" 는 ""가 되지만 어차피 else 다.
+  const route = window.location.pathname.replace(/\/+$/, "")
   const today = todayKst()
 
   return (
@@ -53,7 +39,7 @@ export default function App() {
           h1 을 이미 갖고 있어서, 여기서도 h1 을 내면 한 화면에 최상위 제목이
           둘이 되고 헤딩으로 훑는 사용자가 어느 쪽이 페이지 제목인지 알 수 없다. */}
       <header className="flex h-12 items-center border-b border-rule bg-nav px-6">
-        {route === "#/guide" ? (
+        {route === "/guide" ? (
           <div className={SITE_TITLE}>면세점 적용환율</div>
         ) : (
           <h1 className={SITE_TITLE}>면세점 적용환율</h1>
@@ -61,7 +47,7 @@ export default function App() {
       </header>
 
       <main className="flex-grow">
-        {route === "#/guide" ? (
+        {route === "/guide" ? (
           <div className="mx-auto max-w-2xl">
             <RateGuide />
           </div>
@@ -76,8 +62,7 @@ export default function App() {
       <Footer />
 
       {/* 운영 확인용 방문자 집계. 프로덕션에서만 전송하고 dev 에선 no-op 이다.
-          해시 라우트를 구분하지 못해 #/guide 가 / 로 뭉뚱그려진다. 가이드
-          조회수가 실제로 필요해지면 hashchange 마다 track() 을 쏜다. */}
+          경로가 진짜 URL 이라 /guide 가 제 몫으로 잡힌다. */}
       <Analytics />
     </div>
   )

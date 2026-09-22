@@ -96,7 +96,7 @@ export default function TodayTomorrow({
       </div>
 
       <p className="mt-7 text-[17px]">
-        <a href="#/guide" className="text-link hover:underline">
+        <a href="/guide" className="text-link hover:underline">
           환율이 정해지는 방식 알아보기 ›
         </a>
       </p>
