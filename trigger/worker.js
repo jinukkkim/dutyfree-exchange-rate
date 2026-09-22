@@ -26,6 +26,13 @@ const WORKFLOW = "collect.yml"
 
 export default {
   async scheduled(event, env) {
+    // 시크릿이 없으면 Bearer undefined 로 나가 401 이 되는데, 그 로그는 토큰이
+    // 만료된 경우와 구분되지 않는다. 배포 직후 한 번 겪는 고장이라 원인을
+    // 로그에 적어 두는 편이 싸다.
+    if (!env.GH_TOKEN) {
+      throw new Error("GH_TOKEN secret is not set (npx wrangler secret put GH_TOKEN)")
+    }
+
     const response = await fetch(
       `https://api.github.com/repos/${REPO}/actions/workflows/${WORKFLOW}/dispatches`,
       {
