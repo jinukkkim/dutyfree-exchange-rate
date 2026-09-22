@@ -1,0 +1,90 @@
+name: Collect Watchdog
+
+# 수집이 "멈췄다"를 알려 주는 것이 없었다. Actions 는 실패를 메일로 보내지만
+# **미실행은 알리지 않는다** — collect.yml 이 한 번도 돌지 않은 날과 정상인 날이
+# 대시보드에서 똑같이 조용하다. PR #9 이 이것을 알려진 한계로 적으면서 최종
+# 방어선을 "사이트의 신선도 배너"로 지목했는데, PR #11 이 그 배너를 지웠다.
+# 지금 남은 신호는 "내일" 칸의 작은 회색 문구이고 임계값이 평일 7 일 초과라
+# 탐지가 열흘쯤 걸린다. 그 열흘을 하루로 줄이는 것이 이 워크플로다.
+#
+# 이 워크플로 자신은 아무것도 고치지 않는다. 실패로 끝나서 GitHub 이 메일을
+# 보내게 하는 것이 전부이며, 그 메일이 경보다.
+
+on:
+  schedule:
+    # 3 시간마다. 하루 1 회로 두면 감시자 자신이 감시 대상과 같은 스케줄러를
+    # 쓰는 탓에, 그 한 틱이 누락된 날은 감시가 아예 없다. 2026-09-21~22 관측치
+    # (예정 25 틱 중 실행 4~5 회, 드롭률 약 0.84)로 계산하면 하루 1 틱은 84%
+    # 확률로 전부 누락되고, 8 틱이면 25% 로 떨어진다.
+    #
+    # 정각과 :17 을 모두 피한다. :17 은 collect.yml 이 쓰는 분이라, 같은 분에
+    # 몰리면 둘이 같은 혼잡 구간을 공유한다.
+    - cron: '43 */3 * * *'
+
+  # 경보는 시험할 수 있어야 한다. 시험할 수 없는 경보는 울리지 않는다는 사실을
+  # 울려야 할 때 알게 된다 — 그게 이 워크플로가 막으려는 고장의 종류다.
+  # max_age_hours 에 0 을 주고 돌리면 반드시 실패하므로 메일까지 오는지 확인된다.
+  workflow_dispatch:
+    inputs:
+      max_age_hours:
+        description: '한계 시간. 비우면 기본값. 0 을 주면 반드시 실패해 경보 경로를 시험한다'
+        required: false
+
+# 실행 기록을 읽는 것 외에 아무 권한도 필요 없다. 이 워크플로는 저장소를
+# 건드리지 않는다.
+permissions:
+  actions: read
+
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    # API 한 번과 산술 한 줄이다. 5 분을 넘겼다면 네트워크가 멈춘 것이므로
+    # 기본값 6 시간을 기다릴 이유가 없다.
+    timeout-minutes: 5
+    steps:
+      - name: Fail if the collector has not run recently
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          # 이 시간을 넘겨 성공 실행이 없으면 실패한다.
+          #
+          # 24 시간인 근거: 고시는 영업일 하루 한 번이므로, 하루를 통째로
+          # 놓쳤다면 반드시 고시 하나를 놓친 것이다. 더 좁히지 않는 이유는
+          # GitHub 스케줄러가 지금 6 시간대로 새고 있어서다 — 관측된 최대
+          # 공백이 6.6 시간이고, 드롭률 0.84 로 24 틱 연속 누락은 약 1.5%/일,
+          # 두 달에 한 번쯤 헛경보가 된다. 그 정도는 침묵보다 싸다.
+          #
+          # 외부 크론(Cloudflare Worker)이 붙어 매시간이 실제로 보장되면 3 으로
+          # 줄여라. 그때부터 이 값이 곧 탐지 지연이다.
+          MAX_AGE_HOURS: ${{ inputs.max_age_hours || 24 }}
+        run: |
+          set -euo pipefail
+
+          # 성공한 실행만 본다. 실패한 실행은 GitHub 이 이미 메일로 알렸으므로
+          # 여기서 또 셀 이유가 없고, 오히려 실패가 쌓이는 동안 "최근에 돌았다"고
+          # 오판하게 만든다. event 로는 걸러내지 않는다 — 손으로 돌린 회차도
+          # 실제로 수집을 했으므로 생존 신호다.
+          last=$(gh api \
+            "repos/$REPO/actions/workflows/collect.yml/runs?status=success&per_page=1" \
+            --jq '.workflow_runs[0].run_started_at // empty')
+
+          if [ -z "$last" ]; then
+            echo "::error::collect.yml 의 성공 실행 기록이 없다. 워크플로가 비활성(disabled)인지 확인해라."
+            exit 1
+          fi
+
+          # date -u -d 대신 jq 로 센다. GNU date 는 러너에만 있어서 같은
+          # 스크립트를 개발 기계에서 돌려볼 수 없고, 돌려보지 못한 경보는
+          # 시험되지 않은 경보다. jq 는 러너와 macOS 양쪽에 있다.
+          age_min=$(jq -rn --arg t "$last" '(now - ($t | fromdateiso8601)) / 60 | floor')
+          limit_min=$(( MAX_AGE_HOURS * 60 ))
+
+          echo "마지막 성공 수집: $last"
+          echo "경과: ${age_min}분 / 한계: ${limit_min}분 (${MAX_AGE_HOURS}시간)"
+
+          if [ "$age_min" -gt "$limit_min" ]; then
+            echo "::error::수집이 ${MAX_AGE_HOURS}시간 넘게 돌지 않았다 (마지막 성공 $last). 스케줄러나 외부 트리거가 죽었다."
+            exit 1
+          fi
+
+          echo "정상."
