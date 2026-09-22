@@ -8,7 +8,10 @@
 
 - 도메인·용어·법령 근거: [`docs/domain-reference.md`](docs/domain-reference.md)
 - 설계: [`docs/superpowers/specs/`](docs/superpowers/specs/)
-- 운영: 수집은 GitHub Actions 가 매시간 돌린다 → [`.github/workflows/collect.yml`](.github/workflows/collect.yml)
+- 운영: 수집은 GitHub Actions 에 매시간으로 예약돼 있다 →
+  [`collect.yml`](.github/workflows/collect.yml). 다만 GitHub 이 예약 틱을 상당수
+  버려서 실제 실행은 하루 4~5 회 수준이다(2026-09-22 관측). 멈춤은 워치독이 하루
+  안에 실패 메일로 알린다 → [`watchdog.yml`](.github/workflows/watchdog.yml)
 
 ## 구조
 
