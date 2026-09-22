@@ -12,6 +12,24 @@
 #   npx wrangler tail                    # 다음 매시 17 분에 호출이 찍힌다
 #   gh run list --workflow=collect.yml   # event 가 workflow_dispatch 로 뜬다
 #
+# **확인은 GitHub 실행 기록으로 한다. Cloudflare 의 스케줄 조회 API 를 믿지
+# 마라.** 2026-09-22 에 진단용으로 크론을 "* * * * *" 로 바꿨다가 되돌렸는데,
+# 런타임이 옛 스케줄을 계속 돌렸다. 세 가지가 전부 실패했고 API 는 매번
+# 정상이라고 답했다:
+#
+#   wrangler deploy (17 * * * *)   → API 는 반영, 실제로는 매분 계속
+#   PUT .../schedules []           → API 는 빈 목록, 실제로는 매분 계속
+#   wrangler triggers deploy       → API 는 반영, 실제로는 매분 계속
+#   wrangler delete + 재배포        → 멈춤
+#
+# 즉 크론이 고이면 손쓸 방법은 Worker 를 지우고 다시 만드는 것뿐이고, 그러면
+# 시크릿도 함께 지워지므로 secret put 을 다시 해야 한다. 그래서 **살아 있는
+# 이 Worker 의 크론을 진단용으로 바꾸지 마라.** 시험이 필요하면 별도 이름으로
+# Worker 를 하나 더 띄워서 거기서 해라.
+#
+# 배포 후에는 배포본이 main 과 같은지도 봐라. 한 번 갈라진 적이 있다 —
+# 저장소에만 있는 수정이 배포에 없으면 tail 로그가 코드와 어긋나 읽힌다.
+#
 # GH_TOKEN 은 파인그레인드 PAT 이고, 권한은 이 저장소의 Actions: Read and write
 # 하나다. **저장소에도 이 파일에도 들어가지 않는다** — Cloudflare 시크릿으로만
 # 존재한다.
