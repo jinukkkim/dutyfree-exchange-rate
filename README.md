@@ -17,6 +17,7 @@
 | `collector/` | 서울외국환중개 수집기 (Python 3.12). GitHub Actions 가 매시간 실행 |
 | `data/` | CSV 아카이브. git 이 곧 저장소이자 백업이며 감사 이력 |
 | `web/` | 정적 사이트 (React + Vite). Vercel 이 data 커밋마다 재빌드 |
+| `trigger/` | Cloudflare Worker. 매시간 수집 워크플로를 깨운다 — GitHub 예약이 틱을 대부분 버려서 |
 
 ## 개발
 
