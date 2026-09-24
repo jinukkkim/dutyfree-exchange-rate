@@ -1,4 +1,4 @@
-const REPORT_URL = "https://example.com/report" // Task 14 에서 실제 주소로 교체
+const REPORT_URL = "https://forms.gle/BiUMAooGEX3MKWF1A"
 const GITHUB_URL = "https://github.com/jinukkkim/dutyfree-exchange-rate"
 
 export default function Footer() {
