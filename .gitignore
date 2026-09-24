@@ -7,3 +7,7 @@ dist/
 .env
 .env.local
 *.egg-info/
+
+# wrangler 의 로컬 상태와 시크릿 파일. .dev.vars 에는 토큰이 들어갈 수 있다.
+.wrangler/
+.dev.vars
