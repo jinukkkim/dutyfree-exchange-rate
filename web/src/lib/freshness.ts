@@ -58,6 +58,24 @@ export function isBusinessDay(date: Date): boolean {
   )
 }
 
+/** 목록이 휴장일을 아는 마지막 날. 목록은 해 단위로 추가되므로 마지막 해의 말일이다. */
+const HOLIDAYS_KNOWN_THROUGH = `${[...MARKET_HOLIDAYS].sort().at(-1)!.slice(0, 4)}-12-31`
+
+/**
+ * afterISO 다음의 첫 고시일. 고시 D 의 값은 다음 고시일까지 적용되므로 곧
+ * "언제까지 이 환율인가"의 답이다.
+ *
+ * 휴장일 목록이 덮지 못하는 날짜에 닿으면 null 이다. 모르는 휴장일을 건너뛴
+ * 채 날짜를 약속하면, 값이 아니라 기간이 거짓말이 된다.
+ */
+export function nextFixingDate(afterISO: string): string | null {
+  const cursor = new Date(`${afterISO}T00:00:00Z`)
+  do cursor.setUTCDate(cursor.getUTCDate() + 1)
+  while (!isBusinessDay(cursor))
+  const iso = cursor.toISOString().slice(0, 10)
+  return iso <= HOLIDAYS_KNOWN_THROUGH ? iso : null
+}
+
 /** 마지막 고시 다음날부터 어제까지 고시가 없던 평일이 한계를 넘었는가. */
 export function isStale(
   latestFixingDate: string | undefined,

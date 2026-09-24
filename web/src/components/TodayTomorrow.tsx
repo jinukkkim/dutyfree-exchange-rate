@@ -1,5 +1,5 @@
 import { formatDayLabel, formatRate } from "../lib/format"
-import { isStale } from "../lib/freshness"
+import { isStale, nextFixingDate } from "../lib/freshness"
 import { appliedOn, isTomorrowConfirmed, nextDay, type Rate } from "../lib/rates"
 
 export default function TodayTomorrow({
@@ -36,6 +36,10 @@ export default function TodayTomorrow({
   if (!todayRate) return null
 
   const delta = tomorrowRate ? tomorrowRate.rate - todayRate.rate : null
+
+  /* 내일 값이 모레 이후에도 이어질 때만 적는다(주말·연휴 앞). 평일에는
+     "내일까지"라 칸이 이미 하는 말이다. 확정이 아니면 기간도 없다. */
+  const validThrough = tomorrowRate && nextFixingDate(tomorrowRate.fixingDate)
 
   return (
     <section className="px-6 pb-10 pt-14 text-center sm:pb-14 sm:pt-20">
@@ -94,6 +98,12 @@ export default function TodayTomorrow({
           )}
         </div>
       </div>
+
+      {validThrough && validThrough > nextDay(today) && (
+        <p className="mt-4 text-[13px] text-muted sm:text-[14px]">
+          {`내일 환율은 ${formatDayLabel(validThrough)}까지 적용됩니다`}
+        </p>
+      )}
 
       <p className="mt-7 text-[17px]">
         <a href="/guide" className="text-link hover:underline">

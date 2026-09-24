@@ -118,3 +118,45 @@ test("두 값이 같아도 차액 칸은 자리를 지킨다", () => {
 
   expect(screen.getByText("0.00")).toBeInTheDocument()
 })
+
+const HOLIDAY = parseRates(`fix_date,rate,method,source,collected_at
+2026-09-22,1384.3,MAR,smbs,2026-09-22T09:00:00+09:00
+2026-09-23,1360,MAR,smbs,2026-09-23T09:00:00+09:00
+`)
+
+test("내일 값이 연휴 동안 이어지면 끝나는 날을 적는다", () => {
+  // 2026 추석. 09-23 고시가 다음 고시일 09-28(월)까지 적용된다.
+  render(<TodayTomorrow rates={HOLIDAY} today="2026-09-24" />)
+
+  expect(
+    screen.getByText("내일 환율은 9/28(월)까지 적용됩니다"),
+  ).toBeInTheDocument()
+})
+
+test("연휴 전날에도 고시가 나오면 끝나는 날을 적는다", () => {
+  // 방문자에게 제일 쓸모 있는 날이다 — 연휴 내내 이 값으로 산다.
+  render(<TodayTomorrow rates={HOLIDAY} today="2026-09-23" />)
+
+  expect(
+    screen.getByText("내일 환율은 9/28(월)까지 적용됩니다"),
+  ).toBeInTheDocument()
+})
+
+test("내일 하루만 적용되는 평일에는 기간을 적지 않는다", () => {
+  // 09-22 고시는 09-23 하루만 적용된다. 09-23 고시가 이어받는다.
+  render(<TodayTomorrow rates={HOLIDAY} today="2026-09-22" />)
+
+  expect(screen.queryByText(/까지 적용됩니다/)).not.toBeInTheDocument()
+})
+
+test("휴장일 목록이 덮지 못하는 기간은 약속하지 않는다", () => {
+  // 12-31 고시 다음 고시일은 2027 년이다. 목록이 없으니 날짜를 모른다.
+  const yearEnd = parseRates(`fix_date,rate,method,source,collected_at
+2026-12-30,1340,MAR,smbs,2026-12-30T09:00:00+09:00
+2026-12-31,1350,MAR,smbs,2026-12-31T09:00:00+09:00
+`)
+  render(<TodayTomorrow rates={yearEnd} today="2026-12-31" />)
+
+  expect(screen.getByText("1,350.00")).toBeInTheDocument()
+  expect(screen.queryByText(/까지 적용됩니다/)).not.toBeInTheDocument()
+})
