@@ -1,6 +1,12 @@
 import { formatDayLabel, formatRate } from "../lib/format"
-import { isStale, nextFixingDate } from "../lib/freshness"
-import { appliedOn, isTomorrowConfirmed, nextDay, type Rate } from "../lib/rates"
+import { isStale } from "../lib/freshness"
+import {
+  appliedOn,
+  isTomorrowConfirmed,
+  nextDay,
+  tomorrowValidThrough,
+  type Rate,
+} from "../lib/rates"
 
 export default function TodayTomorrow({
   rates,
@@ -37,12 +43,10 @@ export default function TodayTomorrow({
 
   const delta = tomorrowRate ? tomorrowRate.rate - todayRate.rate : null
 
-  /* 내일 값이 모레 이후에도 이어질 때만 적는다(주말·연휴 앞). 평일에는
-     "내일까지"라 칸이 이미 하는 말이다. 확정이 아니면 기간도 없다. */
-  const validThrough = tomorrowRate && nextFixingDate(tomorrowRate.fixingDate)
+  const validThrough = tomorrowValidThrough(rates, today)
 
   return (
-    <section className="px-6 pb-10 pt-14 text-center sm:pb-14 sm:pt-20">
+    <section className="px-6 pt-14 text-center sm:pb-2 sm:pt-20">
       <div className="mx-auto flex max-w-page items-center justify-center gap-4 sm:gap-10">
         <div>
           <div className="text-[15px] tracking-[-0.01em] text-muted sm:text-[17px]">
@@ -99,9 +103,15 @@ export default function TodayTomorrow({
         </div>
       </div>
 
-      {validThrough && validThrough > nextDay(today) && (
+      {/* 각주 본문은 푸터에 있다(App 이 같은 판정으로 붙인다). */}
+      {validThrough && (
         <p className="mt-4 text-[13px] text-muted sm:text-[14px]">
           {`내일 환율은 ${formatDayLabel(validThrough)}까지 적용됩니다`}
+          <sup className="ml-0.5 text-[0.65em]">
+            <a href="#footnote-1" aria-label="각주 1" className="hover:underline">
+              1
+            </a>
+          </sup>
         </p>
       )}
 

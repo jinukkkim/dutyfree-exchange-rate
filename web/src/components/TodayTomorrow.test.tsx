@@ -131,6 +131,10 @@ test("내일 값이 연휴 동안 이어지면 끝나는 날을 적는다", () =
   expect(
     screen.getByText("내일 환율은 9/28(월)까지 적용됩니다"),
   ).toBeInTheDocument()
+  expect(screen.getByRole("link", { name: "각주 1" })).toHaveAttribute(
+    "href",
+    "#footnote-1",
+  )
 })
 
 test("연휴 전날에도 고시가 나오면 끝나는 날을 적는다", () => {
