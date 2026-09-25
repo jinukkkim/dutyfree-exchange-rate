@@ -6,7 +6,7 @@ import Footer from "./components/Footer"
 import RateChart from "./components/RateChart"
 import RateGuide from "./components/RateGuide"
 import TodayTomorrow from "./components/TodayTomorrow"
-import { parseRates } from "./lib/rates"
+import { parseRates, tomorrowValidThrough } from "./lib/rates"
 
 // 전량이 100KB 수준이라 번들에 싣는다. fetch 폭포와 로딩 상태가 사라지고,
 // "두 숫자"가 첫 페인트에 이미 들어 있다.
@@ -59,7 +59,14 @@ export default function App() {
         )}
       </main>
 
-      <Footer />
+      <Footer>
+        {route !== "/guide" && tomorrowValidThrough(rates, today) && (
+          <li id="footnote-1">
+            주말과 공휴일에는 환율이 새로 고시되지 않아, 직전 영업일에 고시된
+            환율이 다음 고시일까지 그대로 적용됩니다.
+          </li>
+        )}
+      </Footer>
 
       {/* 운영 확인용 방문자 집계. 프로덕션에서만 전송하고 dev 에선 no-op 이다.
           경로가 진짜 URL 이라 /guide 가 제 몫으로 잡힌다. */}
