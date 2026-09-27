@@ -285,6 +285,19 @@ http://www.smbs.biz/ExRate/StdExRate_xml.jsp?arr_value=USD_<YYYY-MM-DD>_<YYYY-MM
 - 화면용 `StdExRate.jsp` 는 EUC-KR JSP 폼 POST라 파싱이 훨씬 나쁨. 이쪽을 쓴다
 - ⚠️ 비공개 내부 엔드포인트다. 예고 없이 바뀔 수 있다
 
+### 교차검증 — 한국은행 ECOS
+
+```
+https://ecos.bok.or.kr/api/StatisticSearch/<KEY>/json/kr/1/100/731Y001/D/<YYYYMMDD>/<YYYYMMDD>/0000001
+```
+
+- 통계표 731Y001(주요국 통화의 대원화환율), 항목 0000001(원/미국달러 매매기준율)
+- 메타데이터의 출처 기관이 **서울외국환중개**다. 한국은행이 계산한 값이 아니라 같은 공표치를 재배포한다
+- 2016-01-04 ~ 2026-09-23 의 2,641 영업일이 smbs 와 날짜·값 모두 일치 (2026-09-27 전수 대조)
+- 공식 API라 형식 변경 위험이 낮다. 대신 원본보다 먼저 올라올 수 없다 — 얼마나 늦는지는 `data/ecos_seen.csv` 에 처음 본 시각으로 쌓는 중이다
+- 무료 키 필요 (`sample` 키는 10건 제한). GitHub Secret `ECOS_API_KEY`
+- 오류도 HTTP 200 + `RESULT.CODE` 로 온다. `INFO-200` 은 데이터 없음(주말만 조회 등)
+
 ### 2차 — 면세점 홈페이지 (교차검증)
 
 보세판매장 고시 §3④3 에 따라 **전 면세점이 게시 의무**를 진다.

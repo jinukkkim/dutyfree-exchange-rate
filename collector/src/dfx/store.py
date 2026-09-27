@@ -91,3 +91,31 @@ def write_rates(path: Path, rows: list[Row]) -> None:
                     row.collected_at,
                 ]
             )
+
+
+# ECOS 에서 각 고시치를 **처음 본** 시각. smbs 의 collected_at 과 나란히 놓고
+# ECOS 가 얼마나 늦게 올라오는지 재는 용도다. 같은 회차에 들어오면 두 값이
+# 같고, 그게 며칠 이어지면 ECOS 를 1차 소스로 올릴 근거가 된다.
+#
+# 한번 적은 행은 다시 쓰지 않는다. 다시 쓰면 "처음 본" 이 "마지막으로 본" 이
+# 된다. seen_at 이 빈 행은 측정을 시작하기 전부터 ECOS 에 있던 값이다.
+ECOS_SEEN_HEADER = ["fix_date", "rate", "seen_at"]
+
+
+def read_seen(path: Path) -> dict[date, tuple[float, str]]:
+    if not path.exists():
+        return {}
+    with path.open(newline="", encoding="utf-8") as handle:
+        return {
+            date.fromisoformat(r["fix_date"]): (float(r["rate"]), r["seen_at"])
+            for r in csv.DictReader(handle)
+        }
+
+
+def write_seen(path: Path, seen: dict[date, tuple[float, str]]) -> None:
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(ECOS_SEEN_HEADER)
+        for fixing_date in sorted(seen):
+            rate, seen_at = seen[fixing_date]
+            writer.writerow([fixing_date.isoformat(), f"{rate:g}", seen_at])
