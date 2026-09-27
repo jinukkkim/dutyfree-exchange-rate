@@ -10,7 +10,7 @@ from datetime import date
 import pytest
 
 from dfx import collect
-from dfx.store import Row, read_seen, write_rates, write_seen
+from dfx.store import Row, read_rates, read_seen, write_rates, write_seen
 
 EXISTING = [
     Row(date(2026, 9, 17), 1368.3, "MAR", "smbs+ssgdfs", "2026-09-17T09:00:12+09:00"),
@@ -28,22 +28,25 @@ def run(tmp_path, monkeypatch):
     monkeypatch.setattr(collect, "ECOS_SEEN_PATH", seen_path)
     monkeypatch.setattr(collect, "today_kst", lambda: date(2026, 9, 21))
 
-    log = {"cross_check": 0, "git": []}
+    log = {"cross_check": 0, "git": [], "cmds": []}
 
     def fake_cross_check(client, rows, today):
         log["cross_check"] += 1
         return True
 
     monkeypatch.setattr(collect, "cross_check", fake_cross_check)
-    monkeypatch.setattr(
-        collect.subprocess, "run", lambda cmd, **kwargs: log["git"].append(cmd[1])
-    )
+    def fake_run(cmd, **kwargs):
+        log["git"].append(cmd[1])
+        log["cmds"].append(cmd)
+
+    monkeypatch.setattr(collect.subprocess, "run", fake_run)
 
     def go(fetched, ecos_rows=None):
         monkeypatch.setattr(collect, "fetch_window", lambda *a: fetched)
         monkeypatch.setattr(collect, "fetch_ecos", lambda *a: ecos_rows)
         assert collect.main() == 0
         log["seen"] = read_seen(seen_path)
+        log["rates"] = {row.fixing_date: row for row in read_rates(path)}
         return log
 
     return go
@@ -90,3 +93,13 @@ def test_ecos_mismatch_warns(run, capsys):
         ecos_rows=[(date(2026, 9, 18), 1380.5)],
     )
     assert "ecos mismatch on 2026-09-18" in capsys.readouterr().err
+
+
+def test_same_run_arrival_gets_identical_timestamps(run):
+    """ECOS 를 1차로 올릴지 가르는 경로. 같은 회차에 들어오면 두 시각이 문자 그대로 같아야 한다."""
+    new = (date(2026, 9, 21), 1383.8)
+    log = run([(date(2026, 9, 18), 1380.3), new], ecos_rows=[new])
+    assert log["seen"][new[0]][1] == log["rates"][new[0]].collected_at
+    added = log["cmds"][0][2:]
+    assert any(p.endswith("rates.csv") for p in added)
+    assert any(p.endswith("ecos_seen.csv") for p in added)

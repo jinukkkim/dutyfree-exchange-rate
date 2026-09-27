@@ -28,6 +28,13 @@ def test_error_code_raises():
         parse({"RESULT": {"CODE": "INFO-100", "MESSAGE": "인증키가 유효하지 않습니다."}})
 
 
+@pytest.mark.parametrize("body", [None, [], "oops"])
+def test_non_object_body_raises(body):
+    """dict 가 아닌 JSON 이 200 으로 와도 EcosError 여야 한다. 아니면 수집기가 못 잡고 죽는다."""
+    with pytest.raises(EcosError):
+        parse(body)
+
+
 def test_empty_value_raises():
     body = {"StatisticSearch": {"row": [{"TIME": "20260923", "DATA_VALUE": ""}]}}
     with pytest.raises(EcosError):

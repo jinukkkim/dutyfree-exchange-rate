@@ -27,7 +27,9 @@ class EcosError(Exception):
     """응답이 왔지만 환율을 뽑을 수 없음."""
 
 
-def parse(body: dict) -> list[tuple[date, float]]:
+def parse(body: object) -> list[tuple[date, float]]:
+    if not isinstance(body, dict):
+        raise EcosError(f"unexpected body: {type(body).__name__}")
     if "StatisticSearch" not in body:
         result = body.get("RESULT", {})
         if result.get("CODE") == _NO_DATA:
