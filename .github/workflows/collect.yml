@@ -25,7 +25,7 @@ concurrency:
 jobs:
   collect:
     runs-on: ubuntu-latest
-    # 수집은 HTTP 두 번이다. 10분을 넘겼다면 원본이 멈춘 것이므로 기본값
+    # 수집은 HTTP 서너 번이다. 10분을 넘겼다면 원본이 멈춘 것이므로 기본값
     # 6시간을 붙들고 있을 이유가 없다.
     timeout-minutes: 10
     steps:
@@ -50,3 +50,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - run: python -m dfx.collect
+        env:
+          # 없으면 ECOS 교차검증만 건너뛰고 수집은 진행한다.
+          ECOS_API_KEY: ${{ secrets.ECOS_API_KEY }}
