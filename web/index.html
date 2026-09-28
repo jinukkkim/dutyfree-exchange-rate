@@ -35,8 +35,16 @@
   <body>
     <!-- JS 를 돌리지 않는 크롤러를 위한 문장. createRoot 가 첫 렌더에서 지운다.
          보이게 두면 JS 가 늦는 동안 화면 가운데 떠 있다가 바뀐다. 숨겨도 본문과
-         같은 숫자라 크롤러에게만 다른 말을 하는 게 아니다. -->
-    <div id="root"><p class="sr-only">%LATEST_FIXING%</p></div>
+         같은 숫자라 크롤러에게만 다른 말을 하는 게 아니다.
+         sr-only 클래스가 아니라 인라인인 까닭: dev 서버는 Tailwind CSS 를 JS 로
+         주입해서, JS 가 돌기 전엔 클래스가 아무 일도 하지 않는다. -->
+    <div id="root">
+      <p
+        style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap"
+      >
+        %LATEST_FIXING%
+      </p>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
