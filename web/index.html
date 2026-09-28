@@ -4,9 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>면세점 적용환율</title>
+    <!-- 퍼센트로 감싼 LATEST_FIXING 은 빌드 때 최신 고시 문장으로 바뀐다 (vite.config.ts). -->
     <meta
       name="description"
-      content="면세점 적용환율의 오늘·내일 확정치와 이력. 내일 환율은 예측이 아니라 오늘 08시에 고시된 사실입니다."
+      content="%LATEST_FIXING%. 내일 면세점 환율은 예측이 아니라 오늘 08시에 고시된 사실입니다."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -16,7 +17,8 @@
     />
   </head>
   <body>
-    <div id="root"></div>
+    <!-- JS 를 돌리지 않는 크롤러를 위한 문장. createRoot 가 첫 렌더에서 지운다. -->
+    <div id="root"><p class="px-6 pt-14 text-center text-muted">%LATEST_FIXING%</p></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
