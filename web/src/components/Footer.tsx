@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 
 import baseRatesCsv from "../../../data/base_rates.csv?raw"
 
@@ -13,6 +13,29 @@ const BASE_RATE_URL = parseBaseRates(baseRatesCsv).find((r) => r.status === "con
 const EXTERNAL = { target: "_blank", rel: "noopener noreferrer" } as const
 const SOURCE_LINK = "underline decoration-rule underline-offset-2 hover:text-ink"
 const NAV_LINK = "text-link hover:underline"
+
+/** 모바일은 시스템 공유 시트, 그게 없으면 링크 복사로 떨어진다. */
+function ShareButton() {
+  const [copied, setCopied] = useState(false)
+
+  async function share() {
+    const url = window.location.href
+    if (navigator.share) {
+      // 사용자가 시트를 닫아도 reject 된다. 고장이 아니라 무시한다.
+      await navigator.share({ title: document.title, url }).catch(() => {})
+      return
+    }
+    await navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <button type="button" onClick={share} className={NAV_LINK}>
+      {copied ? "링크 복사됨" : "공유하기"}
+    </button>
+  )
+}
 
 /** children 은 본문 각주다. 번호를 단 쪽이 같은 조건으로 넘긴다. */
 export default function Footer({ children }: { children?: ReactNode }) {
@@ -45,6 +68,7 @@ export default function Footer({ children }: { children?: ReactNode }) {
         <a href={REPORT_URL} className={NAV_LINK} {...EXTERNAL}>
           제보하기
         </a>
+        <ShareButton />
       </nav>
     </footer>
   )
