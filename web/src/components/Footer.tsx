@@ -1,7 +1,6 @@
 import type { ReactNode } from "react"
 
 const REPORT_URL = "https://forms.gle/BiUMAooGEX3MKWF1A"
-const GITHUB_URL = "https://github.com/jinukkkim/dutyfree-exchange-rate"
 
 /** children 은 본문 각주다. 번호를 단 쪽이 같은 조건으로 넘긴다. */
 export default function Footer({ children }: { children?: ReactNode }) {
@@ -19,9 +18,6 @@ export default function Footer({ children }: { children?: ReactNode }) {
       <nav className="mx-auto mt-4 flex max-w-page gap-[22px] text-xs">
         <a href={REPORT_URL} className="text-link hover:underline" target="_blank" rel="noopener noreferrer">
           제보하기
-        </a>
-        <a href={GITHUB_URL} className="text-link hover:underline" target="_blank" rel="noopener noreferrer">
-          GitHub
         </a>
       </nav>
     </footer>
