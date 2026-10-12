@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react"
+import { useRef, useState, type ReactNode } from "react"
 
 import baseRatesCsv from "../../../data/base_rates.csv?raw"
 
@@ -16,7 +16,8 @@ const NAV_LINK = "text-link hover:underline"
 
 /** 모바일은 시스템 공유 시트, 그게 없으면 링크 복사로 떨어진다. */
 function ShareButton() {
-  const [copied, setCopied] = useState(false)
+  const [label, setLabel] = useState("공유하기")
+  const timer = useRef<number>()
 
   async function share() {
     const url = window.location.href
@@ -25,14 +26,18 @@ function ShareButton() {
       await navigator.share({ title: document.title, url }).catch(() => {})
       return
     }
-    await navigator.clipboard.writeText(url)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    // 권한 거부면 reject, 비보안 컨텍스트면 clipboard 자체가 없다. 둘 다 말없이
+    // 끝나면 버튼이 고장 난 것처럼 보인다.
+    const ok = await navigator.clipboard?.writeText(url).then(() => true, () => false)
+    setLabel(ok ? "링크 복사됨" : "복사 실패")
+    // 연달아 누르면 앞 타이머가 새 문구를 일찍 지운다.
+    clearTimeout(timer.current)
+    timer.current = window.setTimeout(() => setLabel("공유하기"), 2000)
   }
 
   return (
     <button type="button" onClick={share} className={NAV_LINK}>
-      {copied ? "링크 복사됨" : "공유하기"}
+      {label}
     </button>
   )
 }
