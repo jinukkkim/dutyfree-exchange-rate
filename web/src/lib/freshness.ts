@@ -27,7 +27,7 @@ export const STALE_AFTER_MISSED_FIXINGS = 6
  * 평일인데 고시가 없는 날(서울 외환시장 휴장일).
  *
  * 적용환율 값은 달력 없이도 맞는다(appliedOn 의 이월 규칙). 이 목록이 고치는
- * 것은 문구다 — 없으면 평일 연휴 내내 "내일"이 "아직 고시되지 않았습니다"로
+ * 것은 문구다 — 없으면 평일 연휴 내내 "내일"이 "고시 전"으로
  * 남는다(2026 추석에 실제로 그랬다). 법정 공휴일 달력과 같지 않다: 5/1 은
  * 휴장이고 12/31 은 고시가 난다. 과거 목록은 rates.csv 에서 빠진 평일로 검증된다.
  *
@@ -86,7 +86,7 @@ export function isStale(
   if (Number.isNaN(cursor.getTime())) return true
 
   // 오늘은 세지 않는다. 오늘 고시는 08 시경에 나오므로 아직 없는 것이 정상이고,
-  // 그 하루는 isTomorrowConfirmed 가 "아직 고시되지 않았습니다"로 이미 다룬다.
+  // 그 하루는 isTomorrowConfirmed 가 "고시 전"으로 이미 다룬다.
   let missed = 0
   cursor.setUTCDate(cursor.getUTCDate() + 1)
   while (cursor.toISOString().slice(0, 10) < today) {

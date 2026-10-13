@@ -1,6 +1,6 @@
 import { expect, test } from "vitest"
 
-import { appliedOn, isTomorrowConfirmed, nextDay, parseRates } from "./rates"
+import { appliedOn, isTomorrowConfirmed, isTomorrowPending, nextDay, parseRates } from "./rates"
 
 const CSV = `fix_date,rate,method,source,collected_at
 2026-09-11,1338.2,MAR,smbs,2026-09-12T09:00:00+09:00
@@ -71,8 +71,17 @@ test("평일 휴장일에는 직전 고시가 내일로 확정된다", () => {
 
 test("주말은 고시가 없어도 확정이다", () => {
   // 토·일에는 애초에 고시가 없다. 직전 고시가 이어지는 것이 확정이므로
-  // 여기서 미확정을 돌려주면 주말마다 "아직 고시되지 않았습니다"가 뜬다.
+  // 여기서 미확정을 돌려주면 주말마다 "고시 전"이 뜬다.
   for (const weekend of ["2026-09-12", "2026-09-13"]) {
     expect(isTomorrowConfirmed(parseRates(CSV), weekend)).toBe(true)
   }
+})
+
+test("고시 전은 평일에 오늘 고시를 기다릴 때뿐이다", () => {
+  // 본문 "고시 전"과 푸터 각주가 이 판정 하나를 같이 쓴다.
+  const rates = parseRates(CSV) // 마지막 고시 09-17(목)
+  expect(isTomorrowPending(rates, "2026-09-18")).toBe(true) // 금, 오늘 고시 없음
+  expect(isTomorrowPending(rates, "2026-09-17")).toBe(false) // 오늘 고시 있음
+  expect(isTomorrowPending(rates, "2026-09-19")).toBe(false) // 토, 고시 없는 날
+  expect(isTomorrowPending(rates, "2026-10-05")).toBe(false) // 멈춤은 고시 전이 아니다
 })
