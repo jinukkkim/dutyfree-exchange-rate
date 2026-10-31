@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs"
+import { readFileSync, writeFileSync } from "node:fs"
+import { join, resolve } from "node:path"
 
 import react from "@vitejs/plugin-react"
 import { defineConfig, type Plugin } from "vite"
@@ -29,8 +30,45 @@ function latestFixing(): Plugin {
   }
 }
 
+/**
+ * /guide 전용 HTML. 앱은 한 장짜리라 /guide 도 index.html 을 받는데, 그러면
+ * 검색 결과에서 홈과 제목·설명이 같아 구분이 안 된다 (네이버 CTR 0.3%).
+ * 크롤러는 JS 로 바꾼 제목을 읽지 않으니 빌드 결과를 복사해 둘만 바꾼다.
+ * vercel.json 의 /guide rewrite 가 이 파일을 가리킨다.
+ */
+const GUIDE_TITLE = "면세점 환율 적용 기준 - 매매기준율·적용환율·기준환율 차이"
+const GUIDE_DESCRIPTION =
+  "면세점 결제에 쓰이는 환율은 직전 영업일 08시에 고시된 매매기준율입니다. " +
+  "주말·공휴일 이월, 은행 환율·면세점 기준환율과의 차이, 법적 근거를 정리했습니다."
+
+function guidePage(): Plugin {
+  let outDir = ""
+  return {
+    name: "guide-page",
+    apply: "build",
+    configResolved(config) {
+      outDir = resolve(config.root, config.build.outDir)
+    },
+    closeBundle() {
+      const html = readFileSync(join(outDir, "index.html"), "utf8")
+      const title = /<title>[^<]*<\/title>/
+      const description = /(<meta\s+name="description"\s+content=")[^"]*/
+      // index.html 구조가 바뀌어 하나라도 못 찾으면 홈의 사본이 조용히 배포된다.
+      if (!title.test(html) || !description.test(html)) {
+        throw new Error("guide-page: index.html 에서 <title> 또는 description 을 찾지 못함")
+      }
+      writeFileSync(
+        join(outDir, "guide.html"),
+        html
+          .replace(title, `<title>${GUIDE_TITLE}</title>`)
+          .replace(description, `$1${GUIDE_DESCRIPTION}`),
+      )
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [react(), latestFixing()],
+  plugins: [react(), latestFixing(), guidePage()],
   // data/ 는 리포 루트에 있고 web/ 바깥이다. ?raw 임포트를 허용하려면 필요하다.
   server: { fs: { allow: [".."] } },
   test: { environment: "jsdom", globals: true, setupFiles: ["./vitest.setup.ts"] },
