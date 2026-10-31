@@ -35,6 +35,7 @@ function latestFixing(): Plugin {
  * 검색 결과에서 홈과 제목·설명이 같아 구분이 안 된다 (네이버 CTR 0.3%).
  * 크롤러는 JS 로 바꾼 제목을 읽지 않으니 빌드 결과를 복사해 둘만 바꾼다.
  * vercel.json 의 /guide rewrite 가 이 파일을 가리킨다.
+ * 문구는 RateGuide.tsx 본문의 요약이라, 본문의 결론이나 섹션을 바꾸면 여기도 맞춘다.
  */
 const GUIDE_TITLE = "면세점 환율 적용 기준 - 매매기준율·적용환율·기준환율 차이"
 const GUIDE_DESCRIPTION =
