@@ -6,7 +6,12 @@ import Footer from "./components/Footer"
 import RateChart from "./components/RateChart"
 import RateGuide from "./components/RateGuide"
 import TodayTomorrow from "./components/TodayTomorrow"
-import { isTomorrowPending, parseRates, tomorrowValidThrough } from "./lib/rates"
+import {
+  carriedUntilTomorrow,
+  isTomorrowPending,
+  parseRates,
+  tomorrowValidThrough,
+} from "./lib/rates"
 
 // 전량이 100KB 수준이라 번들에 싣는다. fetch 폭포와 로딩 상태가 사라지고,
 // "두 숫자"가 첫 페인트에 이미 들어 있다.
@@ -60,7 +65,8 @@ export default function App() {
       </main>
 
       <Footer>
-        {route !== "/guide" && tomorrowValidThrough(rates, today) && (
+        {route !== "/guide" &&
+          (tomorrowValidThrough(rates, today) || carriedUntilTomorrow(rates, today)) && (
           <li id="footnote-1">
             주말과 공휴일에는 환율이 새로 고시되지 않아, 직전 영업일에 고시된
             환율이 다음 고시일까지 그대로 적용됩니다.

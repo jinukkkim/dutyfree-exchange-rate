@@ -168,3 +168,46 @@ test("휴장일 목록이 덮지 못하는 기간은 약속하지 않는다", ()
   expect(screen.getByText("1,350.00")).toBeInTheDocument()
   expect(screen.queryByText(/까지 적용됩니다/)).not.toBeInTheDocument()
 })
+
+const LATE_OCT = parseRates(`fix_date,rate,method,source,collected_at
+2026-10-29,1336.3,MAR,smbs,2026-10-29T09:00:00+09:00
+2026-10-30,1335.3,MAR,smbs,2026-10-30T09:00:00+09:00
+2026-11-02,1340,MAR,smbs,2026-11-02T09:00:00+09:00
+`)
+
+test("일요일에는 오늘·내일이 같은 고시인 이유를 적는다", () => {
+  // 10-30(금) 고시가 토·일·월에 적용된다. 일요일에는 내일(월)이 마지막 날이다.
+  render(<TodayTomorrow rates={LATE_OCT.slice(0, 2)} today="2026-11-01" />)
+
+  expect(
+    screen.getByText("내일까지 10/30(금) 고시 환율이 적용됩니다"),
+  ).toBeInTheDocument()
+  expect(screen.getByRole("link", { name: "각주 1" })).toHaveAttribute(
+    "href",
+    "#footnote-1",
+  )
+})
+
+test("토요일에는 지금처럼 끝나는 날을 적는다", () => {
+  render(<TodayTomorrow rates={LATE_OCT.slice(0, 2)} today="2026-10-31" />)
+
+  expect(screen.getByText("내일 환율은 11/2(월)까지 적용됩니다")).toBeInTheDocument()
+  expect(screen.queryByText(/고시 환율이 적용됩니다/)).not.toBeInTheDocument()
+})
+
+test("연휴 마지막 날에도 어느 고시인지 적는다", () => {
+  // 추석. 09-23 고시가 09-28(월)까지 적용되고, 09-27(일)이 그 전날이다.
+  render(<TodayTomorrow rates={HOLIDAY} today="2026-09-27" />)
+
+  expect(
+    screen.getByText("내일까지 9/23(수) 고시 환율이 적용됩니다"),
+  ).toBeInTheDocument()
+})
+
+test("오늘·내일 값이 다른 월요일에는 아무것도 적지 않는다", () => {
+  // 오늘은 10-30 고시, 내일은 11-02 고시.
+  render(<TodayTomorrow rates={LATE_OCT} today="2026-11-02" />)
+
+  expect(screen.queryByText(/적용됩니다/)).not.toBeInTheDocument()
+})
+

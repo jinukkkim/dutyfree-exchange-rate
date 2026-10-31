@@ -95,3 +95,18 @@ export function tomorrowValidThrough(rates: Rate[], today: string): string | nul
   const through = tomorrow && nextFixingDate(tomorrow.fixingDate)
   return through && through > nextDay(today) ? through : null
 }
+
+/**
+ * 오늘 값이 내일까지 그대로 가고 거기서 끝나면(일요일·연휴 마지막 날) 그 고시,
+ * 아니면 null. 오늘·내일 숫자가 같은데 tomorrowValidThrough 는 "내일까지"라
+ * 말이 없어서, 0.00 만 남고 이유가 비는 날이다.
+ *
+ * 끝나는 날을 모르면(휴장일 목록 밖) "내일까지"도 약속하지 않는다.
+ * 본문 문구와 푸터 각주가 같은 판정을 쓴다.
+ */
+export function carriedUntilTomorrow(rates: Rate[], today: string): Rate | null {
+  if (!isTomorrowConfirmed(rates, today)) return null
+  const tomorrow = appliedOn(rates, nextDay(today))
+  if (!tomorrow || tomorrow.fixingDate !== appliedOn(rates, today)?.fixingDate) return null
+  return nextFixingDate(tomorrow.fixingDate) === nextDay(today) ? tomorrow : null
+}

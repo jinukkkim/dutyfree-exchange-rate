@@ -2,6 +2,7 @@ import { formatDayLabel, formatRate } from "../lib/format"
 import { isStale } from "../lib/freshness"
 import {
   appliedOn,
+  carriedUntilTomorrow,
   isTomorrowConfirmed,
   isTomorrowPending,
   nextDay,
@@ -47,7 +48,12 @@ export default function TodayTomorrow({
   const delta = tomorrowRate ? tomorrowRate.rate - todayRate.rate : null
   const pending = isTomorrowPending(rates, today)
 
+  // 토요일·연휴 앞은 끝나는 날을, 일요일·연휴 마지막 날은 어느 고시인지를 적는다.
   const validThrough = tomorrowValidThrough(rates, today)
+  const carried = carriedUntilTomorrow(rates, today)
+  const periodNote = validThrough
+    ? `내일 환율은 ${formatDayLabel(validThrough)}까지 적용됩니다`
+    : carried && `내일까지 ${formatDayLabel(carried.fixingDate)} 고시 환율이 적용됩니다`
 
   return (
     <section className="px-6 pt-14 text-center sm:pb-2 sm:pt-20">
@@ -139,9 +145,9 @@ export default function TodayTomorrow({
       </div>
 
       {/* 각주 본문은 푸터에 있다(App 이 같은 판정으로 붙인다). */}
-      {validThrough && (
+      {periodNote && (
         <p className="mt-4 text-[13px] text-muted sm:text-[14px]">
-          {`내일 환율은 ${formatDayLabel(validThrough)}까지 적용됩니다`}
+          {periodNote}
           <sup className="ml-0.5 text-[0.65em]">
             <a href="#footnote-1" aria-label="각주 1" className="hover:underline">
               1
