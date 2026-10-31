@@ -37,6 +37,9 @@ export default function App() {
   // 끝의 / 를 떼어 /guide/ 도 같은 경로로 본다. "/" 는 ""가 되지만 어차피 else 다.
   const route = window.location.pathname.replace(/\/+$/, "")
   const today = todayKst()
+  // 기간 문구(TodayTomorrow 의 periodNote)와 같은 두 판정이다. 문구가 뜨면 각주도 뜬다.
+  const periodFootnote =
+    tomorrowValidThrough(rates, today) !== null || carriedUntilTomorrow(rates, today) !== null
 
   return (
     <div className="flex min-h-screen flex-col bg-white text-ink">
@@ -65,8 +68,7 @@ export default function App() {
       </main>
 
       <Footer>
-        {route !== "/guide" &&
-          (tomorrowValidThrough(rates, today) || carriedUntilTomorrow(rates, today)) && (
+        {route !== "/guide" && periodFootnote && (
           <li id="footnote-1">
             주말과 공휴일에는 환율이 새로 고시되지 않아, 직전 영업일에 고시된
             환율이 다음 고시일까지 그대로 적용됩니다.

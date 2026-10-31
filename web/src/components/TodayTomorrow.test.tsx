@@ -211,3 +211,14 @@ test("오늘·내일 값이 다른 월요일에는 아무것도 적지 않는다
   expect(screen.queryByText(/적용됩니다/)).not.toBeInTheDocument()
 })
 
+test("휴장일 목록 밖의 일요일에는 \"내일까지\"를 약속하지 않는다", () => {
+  // 2027 휴장일 목록이 없어 01-04(월)가 고시일인지 모른다. 값은 보여주되 기간은 적지 않는다.
+  const newYear = parseRates(`fix_date,rate,method,source,collected_at
+2026-12-31,1350,MAR,smbs,2026-12-31T09:00:00+09:00
+2027-01-01,1352,MAR,smbs,2027-01-01T09:00:00+09:00
+`)
+  render(<TodayTomorrow rates={newYear} today="2027-01-03" />)
+
+  expect(screen.getAllByText("1,352.00")).toHaveLength(2)
+  expect(screen.queryByText(/적용됩니다/)).not.toBeInTheDocument()
+})
