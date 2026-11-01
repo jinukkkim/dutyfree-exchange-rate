@@ -14,6 +14,20 @@ export default {
           '"Noto Sans KR"',
           "sans-serif",
         ],
+        // Tailwind 기본 고정폭 목록에 Pretendard 만 끼운다. 고정폭 서체엔 한글이
+        // 없어서, 없으면 /guide 도식의 한글이 기기 서체로 떨어진다. 일반 이름
+        // monospace 는 어느 기기에서나 잡히므로 반드시 그 앞이어야 한다.
+        mono: [
+          "ui-monospace",
+          "SFMono-Regular",
+          "Menlo",
+          "Monaco",
+          "Consolas",
+          '"Liberation Mono"',
+          '"Courier New"',
+          '"Pretendard Variable"',
+          "monospace",
+        ],
       },
       // 흰 바탕 위에서 전부 4.5:1 이상이다. #86868B(3.6:1)는 쓰지 않는다.
       colors: {
