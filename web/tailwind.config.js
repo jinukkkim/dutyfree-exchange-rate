@@ -2,21 +2,14 @@ export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
-      // 애플 시스템 서체를 그대로 쓴다. 맥·아이폰에서는 SF 와 Apple SD
-      // Gothic Neo 가 잡히고, 나머지 환경은 Noto Sans KR 로 떨어진다.
+      // 아이폰·안드로이드가 같은 모습이도록 시스템 서체 대신 Pretendard 하나를 싣는다.
+      // 파일은 빌드 때 이 사이트에 쓰인 글자만 남긴다(vite.config.ts). 뒤의 목록은
+      // 파일이 도착하기 전 잠깐과, 빌드 뒤에 새로 생긴 글자를 메운다.
       fontFamily: {
         sans: [
+          '"Pretendard Variable"',
           "-apple-system",
           "BlinkMacSystemFont",
-          '"SF Pro Text"',
-          '"Apple SD Gothic Neo"',
-          '"Noto Sans KR"',
-          "sans-serif",
-        ],
-        display: [
-          "-apple-system",
-          "BlinkMacSystemFont",
-          '"SF Pro Display"',
           '"Apple SD Gothic Neo"',
           '"Noto Sans KR"',
           "sans-serif",

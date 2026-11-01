@@ -1,3 +1,6 @@
+/* 패키지의 @font-face 를 그대로 쓴다. 빌드 때 파일은 이 사이트 글자만 남는다(vite.config.ts). */
+@import "pretendard/dist/web/variable/pretendardvariable.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

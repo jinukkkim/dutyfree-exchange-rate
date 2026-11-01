@@ -11,7 +11,7 @@ import {
 } from "../lib/rates"
 
 const BIG_NUMBER =
-  "mt-2.5 font-display text-[30px] font-semibold leading-none tracking-[-0.035em] tabular-nums sm:text-[44px] lg:text-[56px]"
+  "mt-2.5 text-[30px] font-semibold leading-none tracking-[-0.035em] tabular-nums sm:text-[44px] lg:text-[56px]"
 
 export default function TodayTomorrow({
   rates,
