@@ -3,6 +3,7 @@
   "outputDirectory": "web/dist",
   "installCommand": "echo skip",
   "framework": null,
+  "trailingSlash": false,
   "rewrites": [
     {
       "source": "/guide",
