@@ -302,7 +302,7 @@ function ChartHeader({
 }) {
   return (
     <div className="mx-auto max-w-page">
-      <h2 className="font-display text-[24px] font-semibold tracking-[-0.02em] sm:text-[32px]">
+      <h2 className="text-[24px] font-semibold tracking-[-0.02em] sm:text-[32px]">
         적용환율 추이
       </h2>
       <div className="mt-6 inline-flex flex-wrap justify-center gap-2">

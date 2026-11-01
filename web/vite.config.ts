@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from "node:fs"
 import { join, resolve } from "node:path"
 
 import react from "@vitejs/plugin-react"
+import subsetFont from "subset-font"
 import { defineConfig, type Plugin } from "vite"
 
 import { formatDayLabel, formatRate } from "./src/lib/format"
@@ -68,8 +69,47 @@ function guidePage(): Plugin {
   }
 }
 
+/**
+ * Pretendard 원본(2MB)을 이 사이트에 실제로 쓰인 글자만 남긴 파일로 바꾼다.
+ * 화면의 글자는 전부 JS 번들 안의 문자열에서 나오므로(요일도 format.ts 에
+ * 박혀 있다) 번들 코드가 곧 글자 목록이다. 글자 목록이 바뀌어도 파일 이름은
+ * 원본 해시 그대로지만, Vercel 이 정적 파일을 매번 재검증하므로 낡은 파일이
+ * 남지 않는다.
+ *
+ * 폰트는 React 가 그린 뒤에야 쓰이므로, 기다리지 않게 HTML 에서 미리 받는다.
+ */
+const PRETENDARD = /PretendardVariable-[\w-]+\.woff2$/
+
+function pretendardSubset(): Plugin {
+  return {
+    name: "pretendard-subset",
+    apply: "build",
+    transformIndexHtml(_html, ctx) {
+      const font = Object.keys(ctx.bundle ?? {}).find((name) => PRETENDARD.test(name))
+      if (!font) throw new Error("pretendard-subset: 번들에서 Pretendard 파일을 찾지 못함")
+      return [
+        {
+          tag: "link",
+          attrs: { rel: "preload", href: `/${font}`, as: "font", type: "font/woff2", crossorigin: "" },
+          injectTo: "head",
+        },
+      ]
+    },
+    async generateBundle(_options, bundle) {
+      const font = Object.values(bundle).find((file) => PRETENDARD.test(file.fileName))
+      if (font?.type !== "asset") throw new Error("pretendard-subset: 번들에서 Pretendard 파일을 찾지 못함")
+      const code = Object.values(bundle)
+        .map((file) => (file.type === "chunk" ? file.code : ""))
+        .join("")
+      // esbuild 가 한글을 \uXXXX 로 내보내면 목록이 비어 영문만 남은 폰트가 배포된다.
+      if (!/[가-힣]/.test(code)) throw new Error("pretendard-subset: 번들에서 한글을 찾지 못함")
+      font.source = await subsetFont(Buffer.from(font.source), code, { targetFormat: "woff2" })
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [react(), latestFixing(), guidePage()],
+  plugins: [react(), latestFixing(), guidePage(), pretendardSubset()],
   // data/ 는 리포 루트에 있고 web/ 바깥이다. ?raw 임포트를 허용하려면 필요하다.
   server: { fs: { allow: [".."] } },
   test: { environment: "jsdom", globals: true, setupFiles: ["./vitest.setup.ts"] },
