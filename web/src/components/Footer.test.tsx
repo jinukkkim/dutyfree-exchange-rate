@@ -13,18 +13,25 @@ test("제보 링크가 실제 폼으로 간다", () => {
   )
 })
 
-test("출처 두 곳이 글자는 그대로 둔 채 링크가 된다", () => {
+test("출처가 글자는 그대로 둔 채 링크가 된다", () => {
   render(<Footer />)
 
   expect(screen.getByRole("link", { name: "서울외국환중개 고시" })).toHaveAttribute(
     "href",
     expect.stringContaining("smbs.biz"),
   )
-  // 기준환율 링크는 base_rates.csv 의 최신 확정 행 출처다. 빈 문자열이면 깨진 링크가 된다.
-  expect(screen.getByRole("link", { name: "각 면세점 공개값" })).toHaveAttribute(
-    "href",
-    expect.stringMatching(/^https:\/\//),
-  )
+})
+
+test("최근 고시일을 적는다 — 수집이 멈춰도 화면 숫자가 언제 것인지 알 수 있게", () => {
+  render(<Footer latestFixingDate="2026-11-06" />)
+
+  expect(screen.getByText(/최근 고시 11\/6\(금\)/)).toBeInTheDocument()
+})
+
+test("고시일을 모르면 그 줄을 비워 두지 않고 뺀다", () => {
+  render(<Footer />)
+
+  expect(screen.queryByText(/최근 고시/)).not.toBeInTheDocument()
 })
 
 test("공유 시트가 없는 브라우저에서 복사가 실패하면 실패를 알린다", async () => {
