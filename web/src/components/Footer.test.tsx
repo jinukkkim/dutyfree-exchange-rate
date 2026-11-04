@@ -22,6 +22,18 @@ test("출처가 글자는 그대로 둔 채 링크가 된다", () => {
   )
 })
 
+test("최근 고시일을 적는다 — 수집이 멈춰도 화면 숫자가 언제 것인지 알 수 있게", () => {
+  render(<Footer latestFixingDate="2026-11-06" />)
+
+  expect(screen.getByText(/최근 고시 11\/6\(금\)/)).toBeInTheDocument()
+})
+
+test("고시일을 모르면 그 줄을 비워 두지 않고 뺀다", () => {
+  render(<Footer />)
+
+  expect(screen.queryByText(/최근 고시/)).not.toBeInTheDocument()
+})
+
 test("공유 시트가 없는 브라우저에서 복사가 실패하면 실패를 알린다", async () => {
   // 데스크톱 대부분이 이 경로다. 실패가 말없이 끝나면 버튼이 고장 난 것처럼 보인다.
   Object.defineProperty(navigator, "clipboard", {

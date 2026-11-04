@@ -67,7 +67,7 @@ export default function App() {
         )}
       </main>
 
-      <Footer>
+      <Footer latestFixingDate={rates.at(-1)?.fixingDate}>
         {route !== "/guide" && periodFootnote && (
           <li id="footnote-1">
             주말과 공휴일에는 환율이 새로 고시되지 않아, 직전 영업일에 고시된

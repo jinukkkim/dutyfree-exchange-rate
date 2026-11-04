@@ -1,5 +1,7 @@
 import { useRef, useState, type ReactNode } from "react"
 
+import { formatDayLabel } from "../lib/format"
+
 const REPORT_URL = "https://forms.gle/BiUMAooGEX3MKWF1A"
 // smbs.biz 는 https 를 받지 않는다. 이동 링크라 혼합 콘텐츠 문제는 없다.
 const FIXING_URL = "http://www.smbs.biz/ExRate/StdExRate.jsp"
@@ -36,8 +38,20 @@ function ShareButton() {
   )
 }
 
-/** children 은 본문 각주다. 번호를 단 쪽이 같은 조건으로 넘긴다. */
-export default function Footer({ children }: { children?: ReactNode }) {
+/**
+ * children 은 본문 각주다. 번호를 단 쪽이 같은 조건으로 넘긴다.
+ *
+ * 최근 고시일은 수집이 며칠 멈췄을 때를 위한 것이다. 신선도 판정이 낡음을
+ * 선언하기 전(빠진 고시 6일 이하)에는 오늘 숫자가 아무 표시 없이 뜨므로,
+ * 그 숫자가 언제 고시인지 출처 옆에 적어 둔다.
+ */
+export default function Footer({
+  children,
+  latestFixingDate,
+}: {
+  children?: ReactNode
+  latestFixingDate?: string
+}) {
   return (
     <footer className="bg-tint px-6 pb-14 pt-11">
       {children && (
@@ -50,6 +64,7 @@ export default function Footer({ children }: { children?: ReactNode }) {
         <a href={FIXING_URL} className={SOURCE_LINK} {...EXTERNAL}>
           서울외국환중개 고시
         </a>
+        {latestFixingDate && ` · 최근 고시 ${formatDayLabel(latestFixingDate)}`}
       </p>
       <p className="mx-auto mt-1 max-w-page text-xs text-muted">
         참고용이며, 실제 결제 환율은 결제 시점 면세점 고지를 따릅니다.
