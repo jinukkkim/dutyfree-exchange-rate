@@ -2666,3 +2666,4 @@ fix_date,rate,method,source,collected_at
 2026-11-02,1337.2,MAR,smbs+ssgdfs,2026-11-02T00:18:00+09:00
 2026-11-03,1341,MAR,smbs+ssgdfs,2026-11-03T00:18:02+09:00
 2026-11-04,1341.2,MAR,smbs+ssgdfs,2026-11-04T00:18:04+09:00
+2026-11-05,1340.7,MAR,smbs+ssgdfs,2026-11-05T00:18:12+09:00
