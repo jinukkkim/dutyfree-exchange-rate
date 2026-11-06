@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://dutyfree-exchange-rate.vercel.app/sitemap.xml
+Sitemap: https://dutyfreerate.com/sitemap.xml
