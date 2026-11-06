@@ -4,6 +4,19 @@
   "installCommand": "echo skip",
   "framework": null,
   "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "dutyfree-exchange-rate.vercel.app"
+        }
+      ],
+      "destination": "https://dutyfreerate.com/$1",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/guide",

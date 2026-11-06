@@ -60,7 +60,7 @@ export function renderOgImage(rates: Rate[]): Buffer {
     <text x="96" y="396">확인하세요</text>
   </g>
   <text x="96" y="580" font-family="Pretendard" font-weight="400" font-size="28" fill="#424245">롯데·신라·신세계·현대 공통</text>
-  <text x="1104" y="580" text-anchor="end" font-family="Pretendard" font-weight="400" font-size="28" fill="#6E6E73">dutyfree-exchange-rate.vercel.app</text>
+  <text x="1104" y="580" text-anchor="end" font-family="Pretendard" font-weight="400" font-size="28" fill="#6E6E73">dutyfreerate.com</text>
 </svg>`
   return new Resvg(svg, { font: FONT }).render().asPng()
 }
