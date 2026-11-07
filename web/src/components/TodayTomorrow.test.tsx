@@ -41,6 +41,41 @@ test("환율 정보 페이지로 가는 링크를 둔다", () => {
   ).toHaveAttribute("href", "/guide")
 })
 
+function withUserAgent(ua: string, run: () => void) {
+  const original = navigator.userAgent
+  Object.defineProperty(navigator, "userAgent", { configurable: true, value: ua })
+  try {
+    run()
+  } finally {
+    Object.defineProperty(navigator, "userAgent", { configurable: true, value: original })
+  }
+}
+
+test("아이폰에서는 오천엔 앱 링크를 앱스토어로 건다", () => {
+  withUserAgent(
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 NAVER(inapp; search)",
+    () => {
+      render(<TodayTomorrow rates={parseRates(CSV)} today="2026-09-17" />)
+
+      expect(screen.getByRole("link", { name: /오천엔 앱으로 챙기세요/ })).toHaveAttribute(
+        "href",
+        expect.stringContaining("apps.apple.com/kr/app/id6829470220"),
+      )
+    },
+  )
+})
+
+test("안드로이드에서는 받을 수 없는 앱 링크를 보이지 않는다", () => {
+  withUserAgent(
+    "Mozilla/5.0 (Linux; Android 14; SM-S921N) AppleWebKit/537.36 Chrome/130.0 Mobile Safari/537.36",
+    () => {
+      render(<TodayTomorrow rates={parseRates(CSV)} today="2026-09-17" />)
+
+      expect(screen.queryByText(/오천엔/)).not.toBeInTheDocument()
+    },
+  )
+})
+
 test("오르면 차액을 빨강으로, 같으면 회색으로 적는다", () => {
   render(<TodayTomorrow rates={parseRates(CSV)} today="2026-09-17" />)
 

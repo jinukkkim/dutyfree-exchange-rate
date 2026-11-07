@@ -10,6 +10,8 @@ import {
   type Rate,
 } from "../lib/rates"
 
+const APP_STORE_URL = "https://apps.apple.com/kr/app/id6829470220"
+
 const BIG_NUMBER =
   "mt-2.5 text-[30px] font-semibold leading-none tracking-[-0.035em] tabular-nums sm:text-[44px] lg:text-[56px]"
 
@@ -161,6 +163,22 @@ export default function TodayTomorrow({
           환율이 정해지는 방식 알아보기 ›
         </a>
       </p>
+
+      {/* 만든 사람의 다른 앱. iPhone 전용이라 받을 수 있는 기기에서만 띄운다 —
+          안드로이드·PC 방문자에게는 첫 화면이 그대로다. 위 링크보다 한 단계
+          약한 회색이라 사이트 본래 링크보다 튀지 않는다.
+          ponytail: iPadOS 는 Mac 처럼 자신을 밝혀 빠진다. 태블릿 유입이 0.5% 미만이라 둔다. */}
+      {/iPhone|iPad|iPod/.test(navigator.userAgent) && (
+        <p className="mt-3 text-[15px]">
+          <a
+            href={APP_STORE_URL}
+            className="inline-flex items-center gap-1.5 text-sub hover:underline"
+          >
+            <img src="/ochenyen-icon.png" alt="" className="h-[18px] w-[18px] rounded-[4px]" />
+            일본 면세 환급은 오천엔 앱으로 챙기세요 ›
+          </a>
+        </p>
+      )}
     </section>
   )
 }
