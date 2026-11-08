@@ -6,12 +6,7 @@ import Footer from "./components/Footer"
 import RateChart from "./components/RateChart"
 import RateGuide from "./components/RateGuide"
 import TodayTomorrow from "./components/TodayTomorrow"
-import {
-  carriedUntilTomorrow,
-  isTomorrowPending,
-  parseRates,
-  tomorrowValidThrough,
-} from "./lib/rates"
+import { parseRates } from "./lib/rates"
 
 // 전량이 100KB 수준이라 번들에 싣는다. fetch 폭포와 로딩 상태가 사라지고,
 // "두 숫자"가 첫 페인트에 이미 들어 있다.
@@ -37,9 +32,6 @@ export default function App() {
   // 끝의 / 를 떼어 /guide/ 도 같은 경로로 본다. "/" 는 ""가 되지만 어차피 else 다.
   const route = window.location.pathname.replace(/\/+$/, "")
   const today = todayKst()
-  // 기간 문구(TodayTomorrow 의 periodNote)와 같은 두 판정이다. 문구가 뜨면 각주도 뜬다.
-  const periodFootnote =
-    tomorrowValidThrough(rates, today) !== null || carriedUntilTomorrow(rates, today) !== null
 
   return (
     <div className="flex min-h-screen flex-col bg-white text-ink">
@@ -67,21 +59,7 @@ export default function App() {
         )}
       </main>
 
-      <Footer latestFixingDate={rates.at(-1)?.fixingDate}>
-        {route !== "/guide" && periodFootnote && (
-          <li id="footnote-1">
-            주말과 공휴일에는 환율이 새로 고시되지 않아, 직전 영업일에 고시된
-            환율이 다음 고시일까지 그대로 적용됩니다.
-          </li>
-        )}
-        {/* 위 각주와 동시에 뜨지 않는다(확정일 때만 기간이 있다). 그래서 둘 다 1번이다. */}
-        {route !== "/guide" && isTomorrowPending(rates, today) && (
-          <li id="footnote-pending">
-            매매기준율의 공식 고시 시각은 영업일 오전 8시이지만, 대부분 그보다
-            일찍 공개되어 이 사이트에는 보통 새벽 중에 반영됩니다.
-          </li>
-        )}
-      </Footer>
+      <Footer latestFixingDate={rates.at(-1)?.fixingDate} />
 
       {/* 운영 확인용 방문자 집계. 프로덕션에서만 전송하고 dev 에선 no-op 이다.
           경로가 진짜 URL 이라 /guide 가 제 몫으로 잡힌다. */}

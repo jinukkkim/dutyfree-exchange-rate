@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from "react"
+import { useRef, useState } from "react"
 
 import { formatDayLabel } from "../lib/format"
 
@@ -39,26 +39,13 @@ function ShareButton() {
 }
 
 /**
- * children 은 본문 각주다. 번호를 단 쪽이 같은 조건으로 넘긴다.
- *
  * 최근 고시일은 수집이 며칠 멈췄을 때를 위한 것이다. 신선도 판정이 낡음을
  * 선언하기 전(빠진 고시 6일 이하)에는 오늘 숫자가 아무 표시 없이 뜨므로,
  * 그 숫자가 언제 고시인지 출처 옆에 적어 둔다.
  */
-export default function Footer({
-  children,
-  latestFixingDate,
-}: {
-  children?: ReactNode
-  latestFixingDate?: string
-}) {
+export default function Footer({ latestFixingDate }: { latestFixingDate?: string }) {
   return (
     <footer className="bg-tint px-6 pb-14 pt-11">
-      {children && (
-        <ol className="mx-auto mb-4 max-w-page list-decimal pl-4 text-xs leading-relaxed text-muted">
-          {children}
-        </ol>
-      )}
       <p className="mx-auto max-w-page text-xs text-muted">
         매매기준율:{" "}
         <a href={FIXING_URL} className={SOURCE_LINK} {...EXTERNAL}>

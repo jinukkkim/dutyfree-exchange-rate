@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
 import { expect, test } from "vitest"
 
 import { parseRates } from "../lib/rates"
@@ -102,7 +102,11 @@ test("내일 고시가 아직 없으면 오늘만 보여준다", () => {
   expect(screen.getByText("1,353.30")).toBeInTheDocument()
   expect(screen.getByText("고시 전")).toBeInTheDocument()
   expect(screen.getByText("오늘 고시 후 공개됩니다")).toBeInTheDocument()
-  expect(screen.getByRole("link", { name: "각주 1" })).toHaveAttribute("href", "#footnote-pending")
+  // ⓘ 는 누르면 열리고 다른 곳을 누르면 닫힌다.
+  fireEvent.click(screen.getByRole("button", { name: "고시 시각 안내" }))
+  expect(screen.getByText(/공식 고시 시각은 영업일 오전 8시/)).toBeInTheDocument()
+  fireEvent.pointerDown(document.body)
+  expect(screen.queryByText(/공식 고시 시각은 영업일 오전 8시/)).not.toBeInTheDocument()
   // 비교할 내일 값이 없으니 등락 칸도 없다.
   expect(screen.queryByText(/[▲▼]|^0\.00$/)).not.toBeInTheDocument()
 })
@@ -170,10 +174,7 @@ test("내일 값이 연휴 동안 이어지면 끝나는 날을 적는다", () =
   expect(
     screen.getByText("내일 환율은 9/28(월)까지 적용됩니다"),
   ).toBeInTheDocument()
-  expect(screen.getByRole("link", { name: "각주 1" })).toHaveAttribute(
-    "href",
-    "#footnote-1",
-  )
+  expect(screen.getByRole("button", { name: "주말·공휴일 환율 안내" })).toBeInTheDocument()
 })
 
 test("연휴 전날에도 고시가 나오면 끝나는 날을 적는다", () => {
@@ -217,10 +218,22 @@ test("일요일에는 오늘·내일이 같은 고시인 이유를 적는다", (
   expect(
     screen.getByText("내일까지 10/30(금) 고시 환율이 적용됩니다"),
   ).toBeInTheDocument()
-  expect(screen.getByRole("link", { name: "각주 1" })).toHaveAttribute(
-    "href",
-    "#footnote-1",
-  )
+
+  // 마우스는 올리면 뜨고 내리면 사라진다. 누르면 내려도 남는다.
+  const info = screen.getByRole("button", { name: "주말·공휴일 환율 안내" })
+  const tip = () => screen.queryByText(/직전 영업일에 고시된/)
+  fireEvent.pointerOver(info, { pointerType: "mouse" })
+  expect(tip()).toBeInTheDocument()
+  fireEvent.pointerOut(info, { pointerType: "mouse" })
+  expect(tip()).not.toBeInTheDocument()
+  fireEvent.pointerOver(info, { pointerType: "mouse" })
+  fireEvent.click(info)
+  fireEvent.pointerOut(info, { pointerType: "mouse" })
+  expect(tip()).toBeInTheDocument()
+  // 터치 탭은 hover 로 치지 않는다.
+  fireEvent.click(info)
+  fireEvent.pointerOver(info, { pointerType: "touch" })
+  expect(tip()).not.toBeInTheDocument()
 })
 
 test("토요일에는 지금처럼 끝나는 날을 적는다", () => {
