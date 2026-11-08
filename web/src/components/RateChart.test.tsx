@@ -162,3 +162,21 @@ test("5년 구간은 그보다 오래된 고시를 자른다", () => {
       .match(/[ML]/g)!,
   ).toHaveLength(2)
 })
+
+test("hover 하면 차트 위에 그 날의 가격과 날짜를 띄운다", () => {
+  const { container } = render(<RateChart rates={RATES} today="2026-09-17" />)
+  const svg = container.querySelector("svg")!
+  // jsdom 은 레이아웃이 없어 크기가 0 이다. viewBox 와 같은 폭을 준다.
+  svg.getBoundingClientRect = () => ({ left: 0, width: 640 }) as DOMRect
+
+  expect(screen.queryByTestId("chart-hover-label")).toBeNull()
+
+  // 오른쪽 끝 = 마지막 점(09-17 고시 → 09-18 적용, 오늘 기준 내일)
+  fireEvent.mouseMove(svg, { clientX: 624 })
+  expect(screen.getByTestId("chart-hover-label")).toHaveTextContent(
+    "1,368.309/18(금) · 내일",
+  )
+
+  fireEvent.mouseLeave(svg)
+  expect(screen.queryByTestId("chart-hover-label")).toBeNull()
+})

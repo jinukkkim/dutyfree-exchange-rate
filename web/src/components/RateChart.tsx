@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react"
 
-import { formatRate } from "../lib/format"
+import { formatDayLabel, formatRate } from "../lib/format"
 import { isTomorrowConfirmed, nextDay, type Rate } from "../lib/rates"
 
 const RANGES = [
@@ -16,7 +16,6 @@ const DEFAULT_DAYS = 30
 const WIDTH = 640
 const HEIGHT = 240
 const PAD = { top: 16, right: 16, bottom: 28, left: 56 }
-const TOOLTIP = { width: 150, height: 22 }
 
 type Point = { date: string; rate: number; method: Rate["method"] }
 
@@ -145,148 +144,146 @@ export default function RateChart({
     <section className="px-6 pb-16 pt-10 text-center">
       <ChartHeader days={days} setDays={setDays} />
 
-      <div className="mx-auto mt-8 max-w-page px-6 pb-4">
-        <svg
-          viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-          className="mx-auto block w-full max-w-chart touch-none"
-          role="img"
-          aria-label={`적용환율 추이, 최저 ${formatRate(min)} 최고 ${formatRate(max)}`}
-          onMouseMove={(event) => pointAt(event.clientX, event.currentTarget)}
-          onMouseLeave={() => setHover(null)}
-          onTouchMove={(event) => {
-            const touch = event.touches[0]
-            if (touch) pointAt(touch.clientX, event.currentTarget)
-          }}
-          onTouchEnd={() => setHover(null)}
-        >
-          <text x={4} y={PAD.top + 4} className="fill-muted text-[10px]">
-            {formatRate(max)}
-          </text>
-          <text
-            x={4}
-            y={HEIGHT - PAD.bottom}
-            className="fill-muted text-[10px]"
+      <div className="mx-auto mt-3 max-w-page px-6 pb-4">
+        {/* 위쪽 pt-7 은 hover 라벨 자리다. 라벨이 점을 가리지 않도록 차트 밖에 둔다. */}
+        <div className="relative mx-auto max-w-chart pt-7">
+          <svg
+            viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+            className="block w-full touch-none"
+            role="img"
+            aria-label={`적용환율 추이, 최저 ${formatRate(min)} 최고 ${formatRate(max)}`}
+            onMouseMove={(event) => pointAt(event.clientX, event.currentTarget)}
+            onMouseLeave={() => setHover(null)}
+            onTouchMove={(event) => {
+              const touch = event.touches[0]
+              if (touch) pointAt(touch.clientX, event.currentTarget)
+            }}
+            onTouchEnd={() => setHover(null)}
           >
-            {formatRate(min)}
-          </text>
-
-          {/* 오늘이 어디인지 그어 준다. 이 선 오른쪽은 아직 겪지 않은 날이다. */}
-          {showToday && (
-            <line
-              x1={x(futureStart - 1)}
-              y1={PAD.top}
-              x2={x(futureStart - 1)}
-              y2={HEIGHT - PAD.bottom}
-              stroke="currentColor"
-              strokeDasharray="2 3"
-              className="text-rule"
-            />
-          )}
-
-          {pastPaths.map((d, index) => (
-            <path
-              key={index}
-              data-testid="rate-line"
-              d={d}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.5}
-              className="text-ink"
-            />
-          ))}
-
-          {/* MAR 과 TWAP 은 잇지 않는다. 전환 당일 하루는 내일 구간이 그려지지
-            않고, 오늘 세로선 오른쪽이 비어 있는 것으로만 보인다. */}
-          {future.length >= 2 && future[0].method === future[1].method && (
-            <path
-              data-testid="rate-line-future"
-              d={toPath(future, futureStart - 1)}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.5}
-              strokeDasharray="4 3"
-              className="text-key"
-            />
-          )}
-
-          {/* futureStart 가 1 이면 "오늘" 눈금이 첫 점과 같은 x 에 놓인다 —
-              연휴 직후 1개월 구간에 지나간 점이 하나뿐일 때 실제로 생긴다.
-              그때는 날짜보다 "오늘"이 필요한 정보라 날짜 쪽을 접는다. */}
-          {!(showToday && futureStart === 1) && (
+            <text x={4} y={PAD.top + 4} className="fill-muted text-[10px]">
+              {formatRate(max)}
+            </text>
             <text
-              x={PAD.left}
-              y={HEIGHT - 8}
+              x={4}
+              y={HEIGHT - PAD.bottom}
               className="fill-muted text-[10px]"
             >
-              {monthDay(visible[0].date)}
+              {formatRate(min)}
             </text>
-          )}
-          {visible.length >= 6 && (
-            <text
-              x={x(Math.floor((visible.length - 1) / 2))}
-              y={HEIGHT - 8}
-              textAnchor="middle"
-              className="fill-muted text-[10px]"
-            >
-              {monthDay(visible[Math.floor((visible.length - 1) / 2)].date)}
-            </text>
-          )}
-          {showToday && (
-            <text
-              x={x(futureStart - 1)}
-              y={HEIGHT - 8}
-              textAnchor="middle"
-              className="fill-sub text-[10px]"
-            >
-              오늘
-            </text>
-          )}
 
-          {hovered && (
-            <g pointerEvents="none">
+            {/* 오늘이 어디인지 그어 준다. 이 선 오른쪽은 아직 겪지 않은 날이다. */}
+            {showToday && (
               <line
-                x1={x(hover!)}
+                x1={x(futureStart - 1)}
                 y1={PAD.top}
-                x2={x(hover!)}
+                x2={x(futureStart - 1)}
                 y2={HEIGHT - PAD.bottom}
                 stroke="currentColor"
+                strokeDasharray="2 3"
                 className="text-rule"
               />
-              <circle
-                cx={x(hover!)}
-                cy={y(hovered.rate)}
-                r={3}
-                className="fill-ink"
+            )}
+
+            {pastPaths.map((d, index) => (
+              <path
+                key={index}
+                data-testid="rate-line"
+                d={d}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.5}
+                className="text-ink"
               />
-              <rect
-                x={Math.min(
-                  Math.max(x(hover!) - TOOLTIP.width / 2, 0),
-                  WIDTH - TOOLTIP.width,
-                )}
-                y={Math.max(y(hovered.rate) - TOOLTIP.height - 8, 0)}
-                width={TOOLTIP.width}
-                height={TOOLTIP.height}
-                rx={4}
-                className="fill-ink"
+            ))}
+
+            {/* MAR 과 TWAP 은 잇지 않는다. 전환 당일 하루는 내일 구간이 그려지지
+            않고, 오늘 세로선 오른쪽이 비어 있는 것으로만 보인다. */}
+            {future.length >= 2 && future[0].method === future[1].method && (
+              <path
+                data-testid="rate-line-future"
+                d={toPath(future, futureStart - 1)}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.5}
+                strokeDasharray="4 3"
+                className="text-key"
               />
+            )}
+
+            {/* futureStart 가 1 이면 "오늘" 눈금이 첫 점과 같은 x 에 놓인다 —
+              연휴 직후 1개월 구간에 지나간 점이 하나뿐일 때 실제로 생긴다.
+              그때는 날짜보다 "오늘"이 필요한 정보라 날짜 쪽을 접는다. */}
+            {!(showToday && futureStart === 1) && (
               <text
-                x={
-                  Math.min(
-                    Math.max(x(hover!) - TOOLTIP.width / 2, 0),
-                    WIDTH - TOOLTIP.width,
-                  ) +
-                  TOOLTIP.width / 2
-                }
-                y={Math.max(y(hovered.rate) - TOOLTIP.height - 8, 0) + 15}
-                textAnchor="middle"
-                className="fill-white text-[11px] tabular-nums"
+                x={PAD.left}
+                y={HEIGHT - 8}
+                className="fill-muted text-[10px]"
               >
-                {hovered.date} · {formatRate(hovered.rate)}
-                {hovered.date > today ? " (내일)" : ""}
+                {monthDay(visible[0].date)}
               </text>
-            </g>
+            )}
+            {visible.length >= 6 && (
+              <text
+                x={x(Math.floor((visible.length - 1) / 2))}
+                y={HEIGHT - 8}
+                textAnchor="middle"
+                className="fill-muted text-[10px]"
+              >
+                {monthDay(visible[Math.floor((visible.length - 1) / 2)].date)}
+              </text>
+            )}
+            {showToday && (
+              <text
+                x={x(futureStart - 1)}
+                y={HEIGHT - 8}
+                textAnchor="middle"
+                className="fill-sub text-[10px]"
+              >
+                오늘
+              </text>
+            )}
+
+            {hovered && (
+              <g pointerEvents="none">
+                <line
+                  x1={x(hover!)}
+                  y1={0}
+                  x2={x(hover!)}
+                  y2={HEIGHT - PAD.bottom}
+                  stroke="currentColor"
+                  className="text-rule"
+                />
+                <circle
+                  cx={x(hover!)}
+                  cy={y(hovered.rate)}
+                  r={3.5}
+                  className="fill-ink"
+                />
+              </g>
+            )}
+          </svg>
+
+          {/* 박스 없이 세로선 꼭대기에 붙인다. 가장자리에서는 라벨 폭의 절반만큼
+              안쪽에서 멈춰 잘리지 않는다(64px ≈ 라벨 폭의 절반). */}
+          {hovered && (
+            <div
+              aria-hidden="true"
+              data-testid="chart-hover-label"
+              className="pointer-events-none absolute top-0 flex -translate-x-1/2 items-baseline gap-1.5 whitespace-nowrap tabular-nums"
+              style={{
+                left: `clamp(64px, ${(x(hover!) / WIDTH) * 100}%, calc(100% - 64px))`,
+              }}
+            >
+              <span className="text-[15px] font-semibold">
+                {formatRate(hovered.rate)}
+              </span>
+              <span className="text-[12px] text-muted">
+                {formatDayLabel(hovered.date)}
+                {hovered.date > today ? " · 내일" : ""}
+              </span>
+            </div>
           )}
-        </svg>
+        </div>
       </div>
     </section>
   )
