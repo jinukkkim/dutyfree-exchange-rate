@@ -177,6 +177,12 @@ test("hover 하면 차트 위에 그 날의 가격과 날짜를 띄운다", () =
     "1,368.309/18(금) · 내일",
   )
 
+  // 라벨을 x 와 같은 비율만큼 당겨야 폭과 무관하게 차트 안에 머문다.
+  // 가운데 정렬(-50%)로 되돌리면 오른쪽 끝에서 다시 넘친다.
+  const { left, transform } = screen.getByTestId("chart-hover-label").style
+  expect(left).toBe("97.5%")
+  expect(transform).toBe("translateX(-97.5%)")
+
   fireEvent.mouseLeave(svg)
   expect(screen.queryByTestId("chart-hover-label")).toBeNull()
 })

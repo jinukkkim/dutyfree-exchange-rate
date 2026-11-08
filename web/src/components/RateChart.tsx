@@ -263,15 +263,18 @@ export default function RateChart({
             )}
           </svg>
 
-          {/* 박스 없이 세로선 꼭대기에 붙인다. 가장자리에서는 라벨 폭의 절반만큼
-              안쪽에서 멈춰 잘리지 않는다(64px ≈ 라벨 폭의 절반). */}
+          {/* 박스 없이 세로선 꼭대기에 붙인다. 라벨을 자기 폭의 같은 비율만큼
+              당겨서(왼쪽 끝 0%, 가운데 50%, 오른쪽 끝 100%) 폭을 몰라도 차트
+              밖으로 나가지 않는다. 가운데 정렬 + 고정 폭 clamp 는 "· 내일" 이
+              붙은 오른쪽 끝 라벨(약 146px)에서 넘쳤다. */}
           {hovered && (
             <div
               aria-hidden="true"
               data-testid="chart-hover-label"
-              className="pointer-events-none absolute top-0 flex -translate-x-1/2 items-baseline gap-1.5 whitespace-nowrap tabular-nums"
+              className="pointer-events-none absolute top-0 flex items-baseline gap-1.5 whitespace-nowrap tabular-nums"
               style={{
-                left: `clamp(64px, ${(x(hover!) / WIDTH) * 100}%, calc(100% - 64px))`,
+                left: `${(x(hover!) / WIDTH) * 100}%`,
+                transform: `translateX(-${(x(hover!) / WIDTH) * 100}%)`,
               }}
             >
               <span className="text-[15px] font-semibold">
