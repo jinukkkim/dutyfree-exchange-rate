@@ -74,9 +74,6 @@ export function isTomorrowConfirmed(rates: Rate[], today: string): boolean {
 /**
  * 내일 값이 아직 안 나왔을 뿐 정상인가 — 평일, 오늘 고시를 기다리는 중.
  * 고시가 며칠째 멈춘 것(낡음)과는 다른 상태라 화면도 다르게 말한다.
- *
- * 본문 "고시 전"과 푸터 각주가 같은 판정을 쓴다. 갈라 두면 각주만 남거나
- * 각주 번호만 남는다.
  */
 export function isTomorrowPending(rates: Rate[], today: string): boolean {
   return !isTomorrowConfirmed(rates, today) && !isStale(rates.at(-1)?.fixingDate, today)
@@ -85,9 +82,6 @@ export function isTomorrowPending(rates: Rate[], today: string): boolean {
 /**
  * 내일 값이 모레 이후에도 이어지면(주말·연휴 앞) 그 마지막 날, 아니면 null.
  * 평일에는 "내일까지"라 칸이 이미 하는 말이다. 확정이 아니면 기간도 없다.
- *
- * 본문 문구와 푸터 각주가 같은 판정을 쓴다. 갈라 두면 각주만 남거나
- * 각주 번호만 남는다.
  */
 export function tomorrowValidThrough(rates: Rate[], today: string): string | null {
   if (!isTomorrowConfirmed(rates, today)) return null
@@ -102,7 +96,6 @@ export function tomorrowValidThrough(rates: Rate[], today: string): string | nul
  * 말이 없어서, 0.00 만 남고 이유가 비는 날이다.
  *
  * 끝나는 날을 모르면(휴장일 목록 밖) "내일까지"도 약속하지 않는다.
- * 본문 문구와 푸터 각주가 같은 판정을 쓴다.
  */
 export function carriedUntilTomorrow(rates: Rate[], today: string): Rate | null {
   if (!isTomorrowConfirmed(rates, today)) return null

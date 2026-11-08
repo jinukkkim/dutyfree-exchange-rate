@@ -1,5 +1,6 @@
 import { formatDayLabel, formatRate } from "../lib/format"
 import { isStale } from "../lib/freshness"
+import InfoTip from "./InfoTip"
 import {
   appliedOn,
   carriedUntilTomorrow,
@@ -129,32 +130,29 @@ export default function TodayTomorrow({
             </div>
           ) : (
             /* 정상 대기다. 숫자 자리를 같은 크기로 채워야 칸이 깨진 게 아니라
-               비어 있는 것으로 읽힌다. 고시 시각은 본문 대신 각주가 말한다. */
+               비어 있는 것으로 읽힌다. 고시 시각은 본문 대신 ⓘ 가 말한다. */
             <>
               <div className={`${BIG_NUMBER} text-muted`}>고시 전</div>
               {/* 흐름에서 빼야 칸 높이가 오늘 칸과 같아져 두 제목이 나란히 선다. */}
               <div className="absolute left-1/2 mt-2 -translate-x-1/2 whitespace-nowrap text-[13px] text-muted sm:text-[14px]">
                 오늘 고시 후 공개됩니다
-                <sup className="ml-0.5 text-[0.65em]">
-                  <a href="#footnote-pending" aria-label="각주 1" className="hover:underline">
-                    1
-                  </a>
-                </sup>
+                <InfoTip label="고시 시각 안내">
+                  매매기준율의 공식 고시 시각은 영업일 오전 8시이지만, 대부분 그보다
+                  일찍 공개되어 이 사이트에는 보통 새벽 중에 반영됩니다.
+                </InfoTip>
               </div>
             </>
           )}
         </div>
       </div>
 
-      {/* 각주 본문은 푸터에 있다(App 이 같은 판정으로 붙인다). */}
       {periodNote && (
         <p className="mt-4 text-[13px] text-muted sm:text-[14px]">
           {periodNote}
-          <sup className="ml-0.5 text-[0.65em]">
-            <a href="#footnote-1" aria-label="각주 1" className="hover:underline">
-              1
-            </a>
-          </sup>
+          <InfoTip label="주말·공휴일 환율 안내">
+            주말과 공휴일에는 환율이 새로 고시되지 않아, 직전 영업일에 고시된
+            환율이 다음 고시일까지 그대로 적용됩니다.
+          </InfoTip>
         </p>
       )}
 
