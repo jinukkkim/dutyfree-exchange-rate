@@ -78,7 +78,6 @@ test("주말은 고시가 없어도 확정이다", () => {
 })
 
 test("고시 전은 평일에 오늘 고시를 기다릴 때뿐이다", () => {
-  // 본문 "고시 전"과 푸터 각주가 이 판정 하나를 같이 쓴다.
   const rates = parseRates(CSV) // 마지막 고시 09-17(목)
   expect(isTomorrowPending(rates, "2026-09-18")).toBe(true) // 금, 오늘 고시 없음
   expect(isTomorrowPending(rates, "2026-09-17")).toBe(false) // 오늘 고시 있음
