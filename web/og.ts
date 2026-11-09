@@ -3,6 +3,7 @@ import { createRequire } from "node:module"
 import { Resvg } from "@resvg/resvg-js"
 
 import { formatDayLabel, formatRate } from "./src/lib/format"
+import { nextFixingDate } from "./src/lib/freshness"
 import { appliedOn, nextDay, type Rate } from "./src/lib/rates"
 
 /*
@@ -23,6 +24,40 @@ export function ogDescription(rates: Rate[]): string {
   const current = appliedOn(rates, latest.fixingDate)
   const lead = current ? `${fixed} 면세점 환율은 ${formatRate(current.rate)}원입니다. ` : ""
   return `${lead}${from}부터 적용될 환율은 ${fixed} 08시 고시로 확정됐습니다. 지금 확인하세요.`
+}
+
+/*
+ * 검색 결과 설명(meta description)과 JS 를 안 돌리는 크롤러용 본문 문장.
+ * 네이버는 이 설명을 그대로 보여 주고(2026-11-10 확인), 구글은 렌더된 화면 글자를 쓴다.
+ *
+ * "오늘·내일"은 검색어와 맞추는 표제일 뿐 어느 숫자도 가리키지 않는다. 숫자에는
+ * 날짜를 붙인다. 검색 결과는 하루 이상 지난 사본일 수 있어서, 숫자를 "내일"이라
+ * 부르면 다음 날 틀린 문장이 된다.
+ *
+ * "08시"는 쓰지 않는다. 값은 보통 새벽에 반영되어 아직 안 온 시각이 되기 때문이다.
+ */
+export function searchDescription(rates: Rate[]): string {
+  const latest = rates.at(-1)
+  if (!latest) throw new Error("og: rates.csv 에 고시가 없음")
+
+  const from = nextDay(latest.fixingDate)
+  const through = nextFixingDate(latest.fixingDate)
+  const period =
+    through && through > from ? `${formatDayLabel(from)}~${formatDayLabel(through)}` : formatDayLabel(from)
+
+  const current = appliedOn(rates, latest.fixingDate)
+  let comparison = ""
+  if (current) {
+    const was = `${formatDayLabel(latest.fixingDate)} ${formatRate(current.rate)}원`
+    const delta = latest.rate - current.rate
+    comparison =
+      delta === 0
+        ? `, ${was}에서 변동 없음`
+        : `, ${was}보다 ${formatRate(Math.abs(delta))}원 ${delta > 0 ? "오름" : "내림"}`
+  }
+
+  const fixed = formatDayLabel(latest.fixingDate).split("(")[0]
+  return `오늘·내일 면세점 환율. ${period} 1달러 ${formatRate(latest.rate)}원${comparison}. ${fixed} 고시로 확정.`
 }
 
 const require = createRequire(import.meta.url)
