@@ -41,6 +41,18 @@ test("환율 정보 페이지로 가는 링크를 둔다", () => {
   ).toHaveAttribute("href", "/guide")
 })
 
+test("영어판은 단위를 밝히고 영어 가이드로 보내며 오천엔 배너를 숨긴다", () => {
+  withUserAgent("iPhone", () => {
+    render(<TodayTomorrow rates={parseRates(CSV)} today="2026-09-17" lang="en" />)
+  })
+
+  expect(document.body).toHaveTextContent("Today · Sep 17 (Thu)")
+  expect(document.body).toHaveTextContent("Tomorrow · Sep 18 (Fri)")
+  expect(screen.getByText(/KRW per 1 USD/)).toBeInTheDocument()
+  expect(screen.getByRole("link", { name: /How this rate is set/ })).toHaveAttribute("href", "/en/guide")
+  expect(screen.queryByRole("link", { name: /오천엔/ })).not.toBeInTheDocument()
+})
+
 function withUserAgent(ua: string, run: () => void) {
   const original = navigator.userAgent
   Object.defineProperty(navigator, "userAgent", { configurable: true, value: ua })

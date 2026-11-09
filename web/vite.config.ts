@@ -47,44 +47,77 @@ function ogPreview(): Plugin {
 }
 
 /**
- * /guide 전용 HTML. 앱은 한 장짜리라 /guide 도 index.html 을 받는데, 그러면
- * 검색 결과에서 홈과 제목·설명이 같아 구분이 안 된다 (네이버 CTR 0.3%).
+ * /guide·/en·/en/guide 전용 HTML. 앱은 한 장짜리라 이 주소들도 index.html 을
+ * 받는데, 그러면 검색 결과에서 홈과 제목·설명이 같아 구분이 안 된다 (네이버 CTR 0.3%).
  * 크롤러는 JS 로 바꾼 제목을 읽지 않으니 빌드 결과를 복사해 제목·설명과,
- * 구글이 홈의 중복으로 묶지 않도록 canonical·크롤러용 본문 문장을 바꾼다.
- * vercel.json 의 /guide rewrite 가 이 파일을 가리킨다.
+ * 구글이 홈의 중복으로 묶지 않도록 canonical·hreflang·크롤러용 본문 문장을 바꾼다.
+ * vercel.json 의 rewrite 가 이 파일들을 가리킨다.
  * 문구는 RateGuide.tsx 본문의 요약이라, 본문의 결론이나 섹션을 바꾸면 여기도 맞춘다.
  */
+const ORIGIN = "https://dutyfreerate.com"
+const EN_TITLE = "Korea Duty Free Exchange Rate - Today and Tomorrow"
+const EN_OG_DESCRIPTION = "See the exchange rate Korean duty free shops apply today and tomorrow."
+const EN_GUIDE_TITLE = "How Korea Duty Free Exchange Rates Work"
+const EN_GUIDE_DESCRIPTION =
+  "Korean duty free prices are set in US dollars and converted to won at a rate published on the " +
+  "previous business day. Learn which rate applies and why tomorrow's is already known."
+
 const GUIDE_TITLE = "면세점 환율 적용 기준 - 매매기준율·적용환율·기준환율 차이"
 const GUIDE_DESCRIPTION =
   "면세점 결제에 쓰이는 환율은 직전 영업일 08시에 고시된 매매기준율입니다. " +
   "주말·공휴일 이월, 은행 환율·면세점 기준환율과의 차이, 법적 근거를 정리했습니다."
 
-function guidePage(): Plugin {
+type StaticPage = { file: string; path: string; title: string; description: string }
+
+function renderStaticPage(html: string, page: StaticPage): string {
+  const en = page.path.startsWith("/en")
+  const koPath = page.path.replace(/^\/en/, "") || "/"
+  const enPath = koPath === "/" ? "/en" : `/en${koPath}`
+  const edits: [RegExp, string][] = [
+    [/(<title>)[^<]*/, page.title],
+    [/(<meta\s+name="description"\s+content=")[^"]*/, page.description],
+    [/(<link\s+rel="canonical"\s+href=")[^"]*/, ORIGIN + page.path],
+    [/(<link\s+rel="alternate"\s+hreflang="ko"\s+href=")[^"]*/, ORIGIN + koPath],
+    [/(<link\s+rel="alternate"\s+hreflang="en"\s+href=")[^"]*/, ORIGIN + enPath],
+    [/(<link\s+rel="alternate"\s+hreflang="x-default"\s+href=")[^"]*/, ORIGIN + enPath],
+    [/(<div id="root">\s*<p[^>]*>)[^<]*/, page.description],
+  ]
+  if (en) {
+    edits.push(
+      [/(<html\s+lang=")[^"]*/, "en"],
+      [/(<meta\s+property="og:locale"\s+content=")[^"]*/, "en_US"],
+      [/(<meta\s+property="og:site_name"\s+content=")[^"]*/, "DutyFreeRate"],
+      [/(<meta\s+property="og:title"\s+content=")[^"]*/, page.title],
+      [/(<meta\s+property="og:description"\s+content=")[^"]*/, EN_OG_DESCRIPTION],
+    )
+  }
+
+  let result = html
+  for (const [pattern, value] of edits) {
+    // index.html 구조가 바뀌어 하나라도 못 찾으면 홈의 사본이 조용히 배포된다.
+    if (!pattern.test(result)) throw new Error(`static-pages: ${page.file} 에서 ${pattern} 을 찾지 못함`)
+    result = result.replace(pattern, (_match, head: string) => head + value)
+  }
+  // 미리보기 이미지는 한국어뿐이라 영어 페이지에서는 뺀다.
+  return en ? result.replace(/\s*<meta\s+(?:property="og:image|name="twitter:card")[^>]*>/g, "") : result
+}
+
+function staticPages(): Plugin {
   let outDir = ""
   return {
-    name: "guide-page",
+    name: "static-pages",
     apply: "build",
     configResolved(config) {
       outDir = resolve(config.root, config.build.outDir)
     },
     closeBundle() {
       const html = readFileSync(join(outDir, "index.html"), "utf8")
-      const title = /<title>[^<]*<\/title>/
-      const description = /(<meta\s+name="description"\s+content=")[^"]*/
-      const canonical = /(<link\s+rel="canonical"\s+href=")[^"]*/
-      const crawlerText = /(<div id="root">\s*<p[^>]*>)[^<]*/
-      // index.html 구조가 바뀌어 하나라도 못 찾으면 홈의 사본이 조용히 배포된다.
-      if (![title, description, canonical, crawlerText].every((re) => re.test(html))) {
-        throw new Error("guide-page: index.html 에서 title, description, canonical, 본문 문장 중 일부를 찾지 못함")
-      }
-      writeFileSync(
-        join(outDir, "guide.html"),
-        html
-          .replace(title, `<title>${GUIDE_TITLE}</title>`)
-          .replace(description, `$1${GUIDE_DESCRIPTION}`)
-          .replace(canonical, "$1https://dutyfreerate.com/guide")
-          .replace(crawlerText, `$1${GUIDE_DESCRIPTION}`),
-      )
+      const pages: StaticPage[] = [
+        { file: "guide.html", path: "/guide", title: GUIDE_TITLE, description: GUIDE_DESCRIPTION },
+        { file: "en.html", path: "/en", title: EN_TITLE, description: searchDescription(readRates(), "en") },
+        { file: "en-guide.html", path: "/en/guide", title: EN_GUIDE_TITLE, description: EN_GUIDE_DESCRIPTION },
+      ]
+      for (const page of pages) writeFileSync(join(outDir, page.file), renderStaticPage(html, page))
     },
   }
 }
@@ -129,7 +162,7 @@ function pretendardSubset(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), latestFixing(), ogPreview(), guidePage(), pretendardSubset()],
+  plugins: [react(), latestFixing(), ogPreview(), staticPages(), pretendardSubset()],
   // data/ 는 리포 루트에 있고 web/ 바깥이다. ?raw 임포트를 허용하려면 필요하다.
   server: { fs: { allow: [".."] } },
   test: { environment: "jsdom", globals: true, setupFiles: ["./vitest.setup.ts"] },
