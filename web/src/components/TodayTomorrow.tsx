@@ -90,7 +90,12 @@ export default function TodayTomorrow({
           여백을 바꾸면 높이(h-14·sm:h-20)도 같이 바꾼다. */}
       {en && (
         <p className="absolute inset-x-6 top-0 flex h-14 items-center justify-center text-[13px] leading-snug text-muted sm:h-20 sm:text-[14px]">
-          KRW per 1 USD · Korea time · Same rate at Lotte, Shilla, Shinsegae and Hyundai
+          <span>
+            KRW per 1 USD · Korea time
+            <span className="hidden sm:inline"> · </span>
+            <br className="sm:hidden" />
+            Same rate at Lotte, Shilla, Shinsegae and Hyundai
+          </span>
         </p>
       )}
 
