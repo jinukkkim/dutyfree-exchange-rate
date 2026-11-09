@@ -21,6 +21,17 @@ test("금요일 고시는 토요일부터 적용된다고 쓴다", () => {
 
 const search = (...rows: string[]) => searchDescription(parseRates(csv(...rows)))
 
+test("영어 검색 설명도 날짜·환율·등락을 말한다", () => {
+  const en = (...rows: string[]) => searchDescription(parseRates(csv(...rows)), "en")
+  expect(en("2026-11-09,1357.9", "2026-11-10,1355.7")).toBe(
+    "Korea duty free exchange rate. Nov 11 (Wed) 1 USD = 1,355.70 KRW, down 2.20 from 1,357.90 on Nov 10 (Tue). Published Nov 10.",
+  )
+  expect(en("2026-11-05,1340.7", "2026-11-06,1342")).toBe(
+    "Korea duty free exchange rate. Nov 7 (Sat) - Nov 9 (Mon) 1 USD = 1,342.00 KRW, up 1.30 from 1,340.70 on Nov 6 (Fri). Published Nov 6.",
+  )
+  expect(en("2026-11-09,1357.9", "2026-11-10,1357.9")).toContain("unchanged from 1,357.90 on Nov 10 (Tue)")
+})
+
 test("검색 설명은 다음 적용 환율과 등락을 날짜와 함께 말한다", () => {
   expect(search("2026-11-09,1357.9", "2026-11-10,1355.7")).toBe(
     "오늘·내일 면세점 환율. 11/11(수) 1달러 1,355.70원, 11/10(화) 1,357.90원보다 2.20원 내림. 11/10 고시로 확정.",

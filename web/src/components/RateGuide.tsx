@@ -155,6 +155,71 @@ export default function RateGuide() {
   )
 }
 
+/**
+ * 영어 설명. 한국어판의 번역이 아니라 관광객에게 필요한 네 가지만 추린 것이다.
+ * 어떤 통화로 결제해야 유리한지는 근거를 확인하기 전까지 쓰지 않는다.
+ */
+export function RateGuideEn() {
+  return (
+    <article className="px-4 pb-16 pt-10 text-slate-700">
+      <p className="text-sm">
+        <a href="/en" className="text-slate-500 underline underline-offset-2">
+          ← Back to today's rate
+        </a>
+      </p>
+
+      <h1 className="mt-6 text-3xl font-bold tracking-tight text-slate-900">
+        Which exchange rate do Korean duty free shops use?
+      </h1>
+      <p className="mt-4 leading-relaxed">
+        It is not the rate you see in a currency app or on the news. Korean duty free shops use one
+        specific rate, and the rules for it are set by regulation.
+      </p>
+
+      <Section title="One rate, set by regulation">
+        <p>
+          Duty free shops must use the base rate published on the last publication day before the
+          sale. Seoul Money Brokerage Services publishes that base rate once each business day at
+          8:00 a.m. Korea time. It stays fixed for the whole day, so Lotte, Shilla, Shinsegae and
+          Hyundai all apply the same rate.
+        </p>
+      </Section>
+
+      <Section title="How a dollar price becomes won">
+        <p>
+          Duty free prices are set in US dollars. The won amount is the dollar price multiplied by
+          this rate.
+        </p>
+        <pre className="mt-3 overflow-x-auto rounded bg-slate-50 p-4 text-xs leading-relaxed text-slate-600">
+{`Example at a rate of 1,400.00
+$100 × 1,400.00 = ₩140,000`}
+        </pre>
+      </Section>
+
+      <Section title="Why tomorrow's rate is already known">
+        <p>
+          The rate published this morning becomes tomorrow's duty free rate. That is why this site
+          can show tomorrow's number: it is not a forecast, but a rate that has already been
+          published. The rate for the day after tomorrow is unknown until the next publication.
+        </p>
+      </Section>
+
+      <Section title="Weekends and holidays">
+        <p>
+          No rate is published on weekends or public holidays, so the last published rate carries
+          over. For example, the rate published on Friday morning applies on Saturday, Sunday and
+          Monday.
+        </p>
+      </Section>
+
+      <p className="mt-10 border-t pt-4 text-xs leading-relaxed text-slate-400">
+        Sources: Foreign Exchange Transaction Regulations Art. 1-2(7) · Notice on the Operation of
+        Bonded Stores Art. 3(4) · Seoul Money Brokerage Services base rate
+      </p>
+    </article>
+  )
+}
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-10">

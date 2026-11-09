@@ -23,6 +23,14 @@
       "destination": "/guide.html"
     },
     {
+      "source": "/en",
+      "destination": "/en.html"
+    },
+    {
+      "source": "/en/guide",
+      "destination": "/en-guide.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

@@ -2,7 +2,7 @@ import { createRequire } from "node:module"
 
 import { Resvg } from "@resvg/resvg-js"
 
-import { formatDayLabel, formatRate } from "./src/lib/format"
+import { formatDayLabel, formatRate, type Lang } from "./src/lib/format"
 import { nextFixingDate } from "./src/lib/freshness"
 import { appliedOn, nextDay, type Rate } from "./src/lib/rates"
 
@@ -36,28 +36,38 @@ export function ogDescription(rates: Rate[]): string {
  *
  * "08시"는 쓰지 않는다. 값은 보통 새벽에 반영되어 아직 안 온 시각이 되기 때문이다.
  */
-export function searchDescription(rates: Rate[]): string {
+export function searchDescription(rates: Rate[], lang: Lang = "ko"): string {
   const latest = rates.at(-1)
   if (!latest) throw new Error("og: rates.csv 에 고시가 없음")
 
+  const en = lang === "en"
+  const day = (iso: string) => formatDayLabel(iso, lang)
   const from = nextDay(latest.fixingDate)
   const through = nextFixingDate(latest.fixingDate)
   const period =
-    through && through > from ? `${formatDayLabel(from)}~${formatDayLabel(through)}` : formatDayLabel(from)
+    through && through > from ? `${day(from)}${en ? " - " : "~"}${day(through)}` : day(from)
 
   const current = appliedOn(rates, latest.fixingDate)
   let comparison = ""
   if (current) {
-    const was = `${formatDayLabel(latest.fixingDate)} ${formatRate(current.rate)}원`
     const delta = latest.rate - current.rate
-    comparison =
-      delta === 0
-        ? `, ${was}에서 변동 없음`
-        : `, ${was}보다 ${formatRate(Math.abs(delta))}원 ${delta > 0 ? "오름" : "내림"}`
+    const change = formatRate(Math.abs(delta))
+    const before = formatRate(current.rate)
+    const was = `${day(latest.fixingDate)} ${before}원`
+    if (en) {
+      const move = delta === 0 ? "unchanged" : `${delta > 0 ? "up" : "down"} ${change}`
+      comparison = `, ${move} from ${before} on ${day(latest.fixingDate)}`
+    } else {
+      comparison =
+        delta === 0 ? `, ${was}에서 변동 없음` : `, ${was}보다 ${change}원 ${delta > 0 ? "오름" : "내림"}`
+    }
   }
 
-  const fixed = formatDayLabel(latest.fixingDate).split("(")[0]
-  return `오늘·내일 면세점 환율. ${period} 1달러 ${formatRate(latest.rate)}원${comparison}. ${fixed} 고시로 확정.`
+  const fixed = day(latest.fixingDate).split("(")[0].trim()
+  const rate = formatRate(latest.rate)
+  return en
+    ? `Korea duty free exchange rate. ${period} 1 USD = ${rate} KRW${comparison}. Published ${fixed}.`
+    : `오늘·내일 면세점 환율. ${period} 1달러 ${rate}원${comparison}. ${fixed} 고시로 확정.`
 }
 
 const require = createRequire(import.meta.url)

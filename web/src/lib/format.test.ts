@@ -14,3 +14,7 @@ test("날짜는 방문자 타임존과 무관하게 한국 날짜로 읽는다",
   expect(formatDayLabel("2026-09-20")).toBe("9/20(일)")
   expect(formatDayLabel("2026-10-01")).toBe("10/1(목)")
 })
+
+test("영어 날짜도 한국 날짜 그대로 월·일·요일을 쓴다", () => {
+  expect(formatDayLabel("2026-11-10", "en")).toBe("Nov 10 (Tue)")
+})

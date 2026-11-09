@@ -1,4 +1,4 @@
-import { formatDayLabel, formatRate } from "../lib/format"
+import { formatDayLabel, formatRate, type Lang } from "../lib/format"
 import { isStale } from "../lib/freshness"
 import InfoTip from "./InfoTip"
 import {
@@ -19,10 +19,26 @@ const BIG_NUMBER =
 export default function TodayTomorrow({
   rates,
   today,
+  lang = "ko",
 }: {
   rates: Rate[]
   today: string
+  lang?: Lang
 }) {
+  const en = lang === "en"
+  const day = (iso: string) => formatDayLabel(iso, lang)
+  // 영어 라벨이 숫자보다 넓으면 칸이 벌어지거나 줄바꿈되어 숫자 위치가 한국어판과
+  // 달라진다. 숫자가 라벨보다 넓어지는 lg 미만에서는 요일을 접는다.
+  const dayHeading = (name: string, iso: string) => {
+    if (!en) return `${name} · ${day(iso)}`
+    const [date, weekday] = day(iso).split(" (")
+    return (
+      <>
+        {`${name} · ${date}`}
+        <span className="hidden lg:inline">{` (${weekday}`}</span>
+      </>
+    )
+  }
   const todayRate = appliedOn(rates, today)
   const tomorrowRate = isTomorrowConfirmed(rates, today)
     ? appliedOn(rates, nextDay(today))
@@ -42,9 +58,13 @@ export default function TodayTomorrow({
      그때 가장 태연한 거짓말을 하게 된다. */
   const latestFixing = rates.at(-1)?.fixingDate
   const stale = isStale(latestFixing, today)
-  const staleNotice = latestFixing
-    ? `${formatDayLabel(latestFixing)} 이후 고시가 확인되지 않습니다`
-    : "고시가 확인되지 않습니다"
+  const staleNotice = en
+    ? latestFixing
+      ? `No rate confirmed since ${day(latestFixing)}`
+      : "No rate confirmed"
+    : latestFixing
+      ? `${day(latestFixing)} 이후 고시가 확인되지 않습니다`
+      : "고시가 확인되지 않습니다"
 
   if (!todayRate) return null
 
@@ -55,11 +75,30 @@ export default function TodayTomorrow({
   const validThrough = tomorrowValidThrough(rates, today)
   const carried = carriedUntilTomorrow(rates, today)
   const periodNote = validThrough
-    ? `내일 환율은 ${formatDayLabel(validThrough)}까지 적용됩니다`
-    : carried && `내일까지 ${formatDayLabel(carried.fixingDate)} 고시 환율이 적용됩니다`
+    ? en
+      ? `Tomorrow's rate applies through ${day(validThrough)}`
+      : `내일 환율은 ${day(validThrough)}까지 적용됩니다`
+    : carried &&
+      (en
+        ? `The rate published on ${day(carried.fixingDate)} applies through tomorrow`
+        : `내일까지 ${day(carried.fixingDate)} 고시 환율이 적용됩니다`)
 
   return (
-    <section className="px-6 pt-14 text-center sm:pb-2 sm:pt-20">
+    <section className="relative px-6 pt-14 text-center sm:pb-2 sm:pt-20">
+      {/* 한국인에겐 자명한 숫자의 단위와 날짜 기준을 외국인에게만 밝힌다.
+          위쪽 여백(pt-14·sm:pt-20) 안에 띄워서 숫자 위치가 한국어판과 같게 한다.
+          여백을 바꾸면 높이(h-14·sm:h-20)도 같이 바꾼다. */}
+      {en && (
+        <p className="absolute inset-x-6 top-0 flex h-14 items-center justify-center text-[13px] leading-snug text-muted sm:h-20 sm:text-[14px]">
+          <span>
+            KRW per 1 USD · Korea time
+            <span className="hidden sm:inline"> · </span>
+            <br className="sm:hidden" />
+            Same rate at Lotte, Shilla, Shinsegae and Hyundai
+          </span>
+        </p>
+      )}
+
       {/* 대기 안내 줄은 흐름 밖이라 아래 링크와 겹치지 않게 자리를 따로 비운다. */}
       <div
         className={`mx-auto flex max-w-page items-center justify-center gap-4 sm:gap-10 ${
@@ -68,7 +107,7 @@ export default function TodayTomorrow({
       >
         <div>
           <div className="text-[15px] tracking-[-0.01em] text-muted sm:text-[17px]">
-            {`오늘 · ${formatDayLabel(today)}`}
+            {dayHeading(en ? "Today" : "오늘", today)}
           </div>
           <div className={BIG_NUMBER}>
             {formatRate(todayRate.rate)}
@@ -118,7 +157,7 @@ export default function TodayTomorrow({
 
         <div className="relative">
           <div className="text-[15px] tracking-[-0.01em] text-muted sm:text-[17px]">
-            {`내일 · ${formatDayLabel(nextDay(today))}`}
+            {dayHeading(en ? "Tomorrow" : "내일", nextDay(today))}
           </div>
           {tomorrowRate ? (
             <div className={BIG_NUMBER}>
@@ -132,13 +171,14 @@ export default function TodayTomorrow({
             /* 정상 대기다. 숫자 자리를 같은 크기로 채워야 칸이 깨진 게 아니라
                비어 있는 것으로 읽힌다. 고시 시각은 본문 대신 ⓘ 가 말한다. */
             <>
-              <div className={`${BIG_NUMBER} text-muted`}>고시 전</div>
+              <div className={`${BIG_NUMBER} text-muted`}>{en ? "Pending" : "고시 전"}</div>
               {/* 흐름에서 빼야 칸 높이가 오늘 칸과 같아져 두 제목이 나란히 선다. */}
               <div className="absolute left-1/2 mt-2 -translate-x-1/2 whitespace-nowrap text-[13px] text-muted sm:text-[14px]">
-                오늘 고시 후 공개됩니다
-                <InfoTip label="고시 시각 안내">
-                  매매기준율의 공식 고시 시각은 영업일 오전 8시이지만, 대부분 그보다
-                  일찍 공개되어 이 사이트에는 보통 새벽 중에 반영됩니다.
+                {en ? "Not published yet" : "오늘 고시 후 공개됩니다"}
+                <InfoTip label={en ? "About the publication time" : "고시 시각 안내"}>
+                  {en
+                    ? "The official rate is published at 8:00 a.m. Korea time on business days. It usually appears earlier, so this site is typically updated before dawn."
+                    : "매매기준율의 공식 고시 시각은 영업일 오전 8시이지만, 대부분 그보다 일찍 공개되어 이 사이트에는 보통 새벽 중에 반영됩니다."}
                 </InfoTip>
               </div>
             </>
@@ -149,16 +189,17 @@ export default function TodayTomorrow({
       {periodNote && (
         <p className="mt-4 text-[13px] text-muted sm:text-[14px]">
           {periodNote}
-          <InfoTip label="주말·공휴일 환율 안내">
-            주말과 공휴일에는 환율이 새로 고시되지 않아, 직전 영업일에 고시된
-            환율이 다음 고시일까지 그대로 적용됩니다.
+          <InfoTip label={en ? "About weekends and holidays" : "주말·공휴일 환율 안내"}>
+            {en
+              ? "No new rate is published on weekends and holidays, so the last published rate stays in effect until the next one."
+              : "주말과 공휴일에는 환율이 새로 고시되지 않아, 직전 영업일에 고시된 환율이 다음 고시일까지 그대로 적용됩니다."}
           </InfoTip>
         </p>
       )}
 
       <p className="mt-7 text-[17px]">
-        <a href="/guide" className="text-link hover:underline">
-          환율이 정해지는 방식 알아보기 ›
+        <a href={en ? "/en/guide" : "/guide"} className="text-link hover:underline">
+          {en ? "How this rate is set ›" : "환율이 정해지는 방식 알아보기 ›"}
         </a>
       </p>
 
@@ -166,7 +207,7 @@ export default function TodayTomorrow({
           안드로이드·PC 방문자에게는 첫 화면이 그대로다. 위 링크보다 한 단계
           약한 회색이라 사이트 본래 링크보다 튀지 않는다.
           ponytail: iPadOS 는 Mac 처럼 자신을 밝혀 빠진다. 태블릿 유입이 0.5% 미만이라 둔다. */}
-      {/iPhone|iPad|iPod/.test(navigator.userAgent) && (
+      {!en && /iPhone|iPad|iPod/.test(navigator.userAgent) && (
         <p className="mt-3 text-[15px]">
           <a
             href={APP_STORE_URL}
