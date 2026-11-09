@@ -58,7 +58,8 @@ function ogPreview(): Plugin {
 /**
  * /guide 전용 HTML. 앱은 한 장짜리라 /guide 도 index.html 을 받는데, 그러면
  * 검색 결과에서 홈과 제목·설명이 같아 구분이 안 된다 (네이버 CTR 0.3%).
- * 크롤러는 JS 로 바꾼 제목을 읽지 않으니 빌드 결과를 복사해 둘만 바꾼다.
+ * 크롤러는 JS 로 바꾼 제목을 읽지 않으니 빌드 결과를 복사해 제목·설명과,
+ * 구글이 홈의 중복으로 묶지 않도록 canonical·크롤러용 본문 문장을 바꾼다.
  * vercel.json 의 /guide rewrite 가 이 파일을 가리킨다.
  * 문구는 RateGuide.tsx 본문의 요약이라, 본문의 결론이나 섹션을 바꾸면 여기도 맞춘다.
  */
@@ -79,15 +80,19 @@ function guidePage(): Plugin {
       const html = readFileSync(join(outDir, "index.html"), "utf8")
       const title = /<title>[^<]*<\/title>/
       const description = /(<meta\s+name="description"\s+content=")[^"]*/
+      const canonical = /(<link\s+rel="canonical"\s+href=")[^"]*/
+      const crawlerText = /(<div id="root">\s*<p[^>]*>)[^<]*/
       // index.html 구조가 바뀌어 하나라도 못 찾으면 홈의 사본이 조용히 배포된다.
-      if (!title.test(html) || !description.test(html)) {
-        throw new Error("guide-page: index.html 에서 <title> 또는 description 을 찾지 못함")
+      if (![title, description, canonical, crawlerText].every((re) => re.test(html))) {
+        throw new Error("guide-page: index.html 에서 title, description, canonical, 본문 문장 중 일부를 찾지 못함")
       }
       writeFileSync(
         join(outDir, "guide.html"),
         html
           .replace(title, `<title>${GUIDE_TITLE}</title>`)
-          .replace(description, `$1${GUIDE_DESCRIPTION}`),
+          .replace(description, `$1${GUIDE_DESCRIPTION}`)
+          .replace(canonical, "$1https://dutyfreerate.com/guide")
+          .replace(crawlerText, `$1${GUIDE_DESCRIPTION}`),
       )
     },
   }
