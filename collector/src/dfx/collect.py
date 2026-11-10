@@ -32,9 +32,11 @@ from dfx.fixing import KST, fixing_for, today_kst
 from dfx.store import (
     Row,
     method_for,
+    read_jpy,
     read_rates,
     read_seen,
     upsert,
+    write_jpy,
     write_rates,
     write_seen,
 )
@@ -43,6 +45,7 @@ from dfx.validate import ValidationError, check_range, is_abnormal_move
 REPO_ROOT = Path(__file__).resolve().parents[3]
 RATES_PATH = REPO_ROOT / "data" / "rates.csv"
 ECOS_SEEN_PATH = REPO_ROOT / "data" / "ecos_seen.csv"
+JPY_PATH = REPO_ROOT / "data" / "jpy.csv"
 
 OVERLAP_DAYS = 10
 STALE_AFTER_DAYS = 7  # 한국 최장 연휴가 설·추석 + 주말로 5일 안팎이다
@@ -50,13 +53,34 @@ TIMEOUT = httpx.Timeout(45.0)
 HEADERS = {"User-Agent": "duty-free-exchange-rate/1.0 (+https://github.com)"}
 
 
-def fetch_window(client: httpx.Client, start: date, end: date) -> list[tuple[date, float]]:
+def fetch_window(
+    client: httpx.Client, start: date, end: date, code: str = "USD"
+) -> list[tuple[date, float]]:
     url = smbs.URL_TEMPLATE.format(
-        code="USD", start=start.isoformat(), end=end.isoformat()
+        code=code, start=start.isoformat(), end=end.isoformat()
     )
     response = client.get(url, headers={**HEADERS, "X-Requested-With": "XMLHttpRequest"})
     response.raise_for_status()
     return smbs.parse(response.content)
+
+
+def fetch_jpy(client: httpx.Client, start: date, end: date) -> list[tuple[date, float]] | None:
+    """원/100엔 재정환율. /ja 의 엔 환산 참고값용이라 실패해도 수집을 막지 않는다.
+
+    범위 밖 행은 버린다. 화면에 그대로 곱해지는 숫자라 이상한 값은 내보내지
+    않는다 (2016 년 이후 실제 범위는 약 800~1,100). 행 단위로 버리는 까닭: 응답을
+    통째로 버리면 이상치 하나가 10일 창에서 빠질 때까지 정상인 새 값도 막힌다.
+    단위가 바뀌는 식의 형식 변경이면 모든 행이 걸러져 결국 아무것도 쓰지 않는다.
+    """
+    try:
+        rows = fetch_window(client, start, end, "JPY")
+    except (httpx.HTTPError, smbs.ParseError) as exc:
+        print(f"WARN jpy unavailable: {exc}", file=sys.stderr)
+        return None
+    good = [(d, rate) for d, rate in rows if 500 < rate < 2000]
+    if len(good) < len(rows):
+        print(f"WARN jpy out of range, skipped: {sorted(set(rows) - set(good))}", file=sys.stderr)
+    return good
 
 
 def fetch_ecos(client: httpx.Client, start: date, end: date) -> list[tuple[date, float]] | None:
@@ -150,6 +174,7 @@ def main() -> int:
             print(f"FATAL collection failed: {exc}", file=sys.stderr)
             return 1
         ecos_rows = fetch_ecos(client, start, today)
+        jpy_rows = fetch_jpy(client, start, today)
 
         existing = read_rates(RATES_PATH)
         known = {row.fixing_date: row.rate for row in existing}
@@ -203,7 +228,13 @@ def main() -> int:
 
     newly_seen = record_ecos(ecos_rows or [], dict(fetched), collected_at)
 
-    if changed == 0 and not newly_seen:
+    # 재정환율은 달러 매매기준율보다 늦게(08:30 전) 올라와서, 새 엔 값만 들어오는
+    # 회차가 따로 생긴다.
+    jpy = read_jpy(JPY_PATH)
+    jpy_merged = {**jpy, **dict(jpy_rows or [])}
+    jpy_changed = jpy_merged != jpy
+
+    if changed == 0 and not newly_seen and not jpy_changed:
         print(f"no change (latest fixing {latest.isoformat()})")
         return 0
 
@@ -212,10 +243,15 @@ def main() -> int:
         write_rates(RATES_PATH, merged)
         paths.append(str(RATES_PATH))
         message = f"data(collect): rates through {latest.isoformat()}"
-    else:
+    elif newly_seen:
         message = f"data(collect): ecos seen through {max(newly_seen).isoformat()}"
+    else:
+        message = f"data(collect): jpy through {max(jpy_merged).isoformat()}"
     if newly_seen:
         paths.append(str(ECOS_SEEN_PATH))
+    if jpy_changed:
+        write_jpy(JPY_PATH, jpy_merged)
+        paths.append(str(JPY_PATH))
 
     subprocess.run(["git", "add", *paths], cwd=REPO_ROOT, check=True)
     subprocess.run(["git", "commit", "-m", message], cwd=REPO_ROOT, check=True)
@@ -226,7 +262,7 @@ def main() -> int:
     subprocess.run(["git", "push"], cwd=REPO_ROOT, check=True)
     print(
         f"committed {changed} row(s), {len(newly_seen)} ecos first-seen, "
-        f"latest fixing {latest.isoformat()}"
+        f"jpy {'updated' if jpy_changed else 'unchanged'}, latest fixing {latest.isoformat()}"
     )
     return 0
 

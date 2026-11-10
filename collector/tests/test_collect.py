@@ -10,7 +10,15 @@ from datetime import date
 import pytest
 
 from dfx import collect
-from dfx.store import Row, read_rates, read_seen, write_rates, write_seen
+from dfx.store import (
+    Row,
+    read_jpy,
+    read_rates,
+    read_seen,
+    write_jpy,
+    write_rates,
+    write_seen,
+)
 
 EXISTING = [
     Row(date(2026, 9, 17), 1368.3, "MAR", "smbs+ssgdfs", "2026-09-17T09:00:12+09:00"),
@@ -26,6 +34,9 @@ def run(tmp_path, monkeypatch):
     seen_path = tmp_path / "ecos_seen.csv"
     write_seen(seen_path, {date(2026, 9, 18): (1380.3, "")})
     monkeypatch.setattr(collect, "ECOS_SEEN_PATH", seen_path)
+    jpy_path = tmp_path / "jpy.csv"
+    write_jpy(jpy_path, {date(2026, 9, 18): 950.5})
+    monkeypatch.setattr(collect, "JPY_PATH", jpy_path)
     monkeypatch.setattr(collect, "today_kst", lambda: date(2026, 9, 21))
 
     log = {"cross_check": 0, "git": [], "cmds": []}
@@ -41,11 +52,13 @@ def run(tmp_path, monkeypatch):
 
     monkeypatch.setattr(collect.subprocess, "run", fake_run)
 
-    def go(fetched, ecos_rows=None):
+    def go(fetched, ecos_rows=None, jpy_rows=None):
         monkeypatch.setattr(collect, "fetch_window", lambda *a: fetched)
         monkeypatch.setattr(collect, "fetch_ecos", lambda *a: ecos_rows)
+        monkeypatch.setattr(collect, "fetch_jpy", lambda *a: jpy_rows)
         assert collect.main() == 0
         log["seen"] = read_seen(seen_path)
+        log["jpy"] = read_jpy(jpy_path)
         log["rates"] = {row.fixing_date: row for row in read_rates(path)}
         return log
 
@@ -103,3 +116,41 @@ def test_same_run_arrival_gets_identical_timestamps(run):
     added = log["cmds"][0][2:]
     assert any(p.endswith("rates.csv") for p in added)
     assert any(p.endswith("ecos_seen.csv") for p in added)
+
+
+def test_jpy_arriving_later_is_committed_alone(run):
+    """재정환율은 달러보다 늦게 올라온다. 엔 값만 새로 들어와도 커밋해야 /ja 가 따라온다."""
+    log = run(
+        [(date(2026, 9, 17), 1368.3), (date(2026, 9, 18), 1380.3)],
+        jpy_rows=[(date(2026, 9, 18), 950.5), (date(2026, 9, 21), 948.2)],
+    )
+    assert log["jpy"] == {date(2026, 9, 18): 950.5, date(2026, 9, 21): 948.2}
+    assert log["cross_check"] == 0
+    assert log["cmds"][1] == ["git", "commit", "-m", "data(collect): jpy through 2026-09-21"]
+
+
+def test_jpy_unavailable_does_not_block_collection(run):
+    log = run([(date(2026, 9, 18), 1380.3), (date(2026, 9, 21), 1383.8)], jpy_rows=None)
+    assert log["jpy"] == {date(2026, 9, 18): 950.5}
+    assert date(2026, 9, 21) in log["rates"]
+    assert not any(p.endswith("jpy.csv") for p in log["cmds"][0][2:])
+
+
+def test_jpy_out_of_range_row_is_dropped_alone(monkeypatch, capsys):
+    """이상치 한 행이 같은 응답의 정상 행까지 막으면, 그 행이 10일 창에서 빠질 때까지 엔 값이 멈춘다."""
+    rows = [(date(2026, 9, 18), 9.505), (date(2026, 9, 21), 948.2)]
+    monkeypatch.setattr(collect, "fetch_window", lambda *a: rows)
+    assert collect.fetch_jpy(None, date(2026, 9, 11), date(2026, 9, 21)) == [(date(2026, 9, 21), 948.2)]
+    assert "jpy out of range" in capsys.readouterr().err
+
+
+def test_rates_and_jpy_changed_together_are_one_commit(run, capsys):
+    log = run(
+        [(date(2026, 9, 18), 1380.3), (date(2026, 9, 21), 1383.8)],
+        jpy_rows=[(date(2026, 9, 21), 948.2)],
+    )
+    added = log["cmds"][0][2:]
+    assert any(p.endswith("rates.csv") for p in added)
+    assert any(p.endswith("jpy.csv") for p in added)
+    assert log["cmds"][1] == ["git", "commit", "-m", "data(collect): rates through 2026-09-21"]
+    assert "jpy updated" in capsys.readouterr().out

@@ -1,6 +1,26 @@
 import { expect, test } from "vitest"
 
-import { appliedOn, isTomorrowConfirmed, isTomorrowPending, nextDay, parseRates } from "./rates"
+import {
+  appliedOn,
+  isTomorrowConfirmed,
+  isTomorrowPending,
+  latestYen,
+  nextDay,
+  parseRates,
+} from "./rates"
+
+test("엔 레이트는 마지막 행을 쓰고, 깨졌거나 낡았으면 숨긴다", () => {
+  const jpy = (...rows: string[]) => ["fix_date,krw_per_100_jpy", ...rows].join("\n")
+  expect(latestYen(jpy("2026-11-09,856.72", "2026-11-10,858.42"), "2026-11-10")).toEqual({
+    fixingDate: "2026-11-10",
+    krwPer100: 858.42,
+  })
+  expect(latestYen(jpy("2026-11-10,"), "2026-11-10")).toBeNull()
+  expect(latestYen(jpy("2026-11-10,0"), "2026-11-10")).toBeNull()
+  expect(latestYen(jpy(), "2026-11-10")).toBeNull()
+  // 달러와 같은 신선도 기준. 빠진 평일이 넘치면 엔 수집이 멈춘 것이다.
+  expect(latestYen(jpy("2026-10-20,850"), "2026-11-10")).toBeNull()
+})
 
 const CSV = `fix_date,rate,method,source,collected_at
 2026-09-11,1338.2,MAR,smbs,2026-09-12T09:00:00+09:00

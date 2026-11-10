@@ -93,6 +93,29 @@ def write_rates(path: Path, rows: list[Row]) -> None:
             )
 
 
+# 원/100엔 재정환율. /ja 화면의 엔 환산 참고값에만 쓴다. 적용환율이 아니라
+# 방법론·출처 열이 필요 없고, 웹은 마지막 행만 읽는다.
+JPY_HEADER = ["fix_date", "krw_per_100_jpy"]
+
+
+def read_jpy(path: Path) -> dict[date, float]:
+    if not path.exists():
+        return {}
+    with path.open(newline="", encoding="utf-8") as handle:
+        return {
+            date.fromisoformat(r["fix_date"]): float(r["krw_per_100_jpy"])
+            for r in csv.DictReader(handle)
+        }
+
+
+def write_jpy(path: Path, rates: dict[date, float]) -> None:
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(JPY_HEADER)
+        for fixing_date in sorted(rates):
+            writer.writerow([fixing_date.isoformat(), f"{rates[fixing_date]:g}"])
+
+
 # ECOS 에서 각 고시치를 **처음 본** 시각. smbs 의 collected_at 과 나란히 놓고
 # ECOS 가 얼마나 늦게 올라오는지 재는 용도다. 같은 회차에 들어오면 두 값이
 # 같고, 그게 며칠 이어지면 ECOS 를 1차 소스로 올릴 근거가 된다.

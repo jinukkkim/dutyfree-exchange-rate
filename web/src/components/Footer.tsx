@@ -1,6 +1,7 @@
 import { useRef, useState } from "react"
 
-import { formatDayLabel, pick, type Lang } from "../lib/format"
+import { formatDayLabel, formatRate, pick, type Lang } from "../lib/format"
+import type { Yen } from "../lib/rates"
 
 const REPORT_URL = "https://forms.gle/BiUMAooGEX3MKWF1A"
 // smbs.biz 는 https 를 받지 않는다. 이동 링크라 혼합 콘텐츠 문제는 없다.
@@ -52,9 +53,11 @@ function ShareButton({ lang }: { lang: Lang }) {
 export default function Footer({
   latestFixingDate,
   lang = "ko",
+  yen = null,
 }: {
   latestFixingDate?: string
   lang?: Lang
+  yen?: Yen | null
 }) {
   const t = pick(lang)
   return (
@@ -74,6 +77,12 @@ export default function Footer({
           "参考情報です。実際の決済レートは、決済時に免税店が表示するレートに従います。",
         )}
       </p>
+      {/* 엔 환산은 날짜가 붙어야 언제 값인지 안다. 수집이 멈추면 이 날짜가 늙는다. */}
+      {yen && (
+        <p className="mx-auto mt-1 max-w-page text-xs text-muted">
+          {`円換算は${formatDayLabel(yen.fixingDate, "ja")}公表のレート(100円 = ${formatRate(yen.krwPer100)}ウォン)による目安です。カード会社のレートや手数料は含みません。`}
+        </p>
+      )}
       {/* 링크 줄은 늘 맨 아래다. 푸터에 뭘 더하든 이 위에 넣는다.
           제보 폼은 한국어뿐이라 외국어판에서는 뺀다. */}
       <nav className="mx-auto mt-4 flex max-w-page gap-[22px] text-xs">

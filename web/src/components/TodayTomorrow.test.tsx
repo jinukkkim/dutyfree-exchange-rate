@@ -65,6 +65,15 @@ test("일본어판은 단위를 밝히고 일본어 가이드로 보내며 오�
   expect(screen.queryByRole("link", { name: /오천엔/ })).not.toBeInTheDocument()
 })
 
+test("일본어판은 두 숫자를 같은 엔 레이트로 환산해 아래에 적는다", () => {
+  const yen = { fixingDate: "2026-09-17", krwPer100: 950 }
+  render(<TodayTomorrow rates={parseRates(CSV)} today="2026-09-17" lang="ja" yen={yen} />)
+
+  // 1,353.30 / 9.50 = 142.45…, 1,368.30 / 9.50 = 144.03…
+  expect(screen.getByText("約142.5円")).toBeInTheDocument()
+  expect(screen.getByText("約144.0円")).toBeInTheDocument()
+})
+
 function withUserAgent(ua: string, run: () => void) {
   const original = navigator.userAgent
   Object.defineProperty(navigator, "userAgent", { configurable: true, value: ua })
