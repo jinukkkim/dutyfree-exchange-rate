@@ -136,7 +136,21 @@ def test_jpy_unavailable_does_not_block_collection(run):
     assert not any(p.endswith("jpy.csv") for p in log["cmds"][0][2:])
 
 
-def test_jpy_out_of_range_is_dropped(monkeypatch, capsys):
-    monkeypatch.setattr(collect, "fetch_window", lambda *a: [(date(2026, 9, 21), 9.48)])
-    assert collect.fetch_jpy(None, date(2026, 9, 11), date(2026, 9, 21)) is None
+def test_jpy_out_of_range_row_is_dropped_alone(monkeypatch, capsys):
+    """이상치 한 행이 같은 응답의 정상 행까지 막으면, 그 행이 10일 창에서 빠질 때까지 엔 값이 멈춘다."""
+    rows = [(date(2026, 9, 18), 9.505), (date(2026, 9, 21), 948.2)]
+    monkeypatch.setattr(collect, "fetch_window", lambda *a: rows)
+    assert collect.fetch_jpy(None, date(2026, 9, 11), date(2026, 9, 21)) == [(date(2026, 9, 21), 948.2)]
     assert "jpy out of range" in capsys.readouterr().err
+
+
+def test_rates_and_jpy_changed_together_are_one_commit(run, capsys):
+    log = run(
+        [(date(2026, 9, 18), 1380.3), (date(2026, 9, 21), 1383.8)],
+        jpy_rows=[(date(2026, 9, 21), 948.2)],
+    )
+    added = log["cmds"][0][2:]
+    assert any(p.endswith("rates.csv") for p in added)
+    assert any(p.endswith("jpy.csv") for p in added)
+    assert log["cmds"][1] == ["git", "commit", "-m", "data(collect): rates through 2026-09-21"]
+    assert "jpy updated" in capsys.readouterr().out
