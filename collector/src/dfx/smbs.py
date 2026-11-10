@@ -28,10 +28,18 @@ def parse(xml_bytes: bytes) -> list[tuple[date, float]]:
 
     rows: list[tuple[date, float]] = []
     for yy, mm, dd, raw in _SET.findall(text):
-        fixing_date = date(2000 + int(yy), int(mm), int(dd))
+        # 호출부는 ParseError 만 잡는다. 날짜·숫자가 깨진 응답이 ValueError 로 새면
+        # 엔 조회 실패가 달러 수집까지 traceback 으로 끊는다.
+        try:
+            fixing_date = date(2000 + int(yy), int(mm), int(dd))
+        except ValueError as exc:
+            raise ParseError(f"bad date {yy}.{mm}.{dd}") from exc
         if not raw.strip():
             raise ParseError(f"empty rate for {fixing_date.isoformat()}")
-        rows.append((fixing_date, float(raw)))
+        try:
+            rows.append((fixing_date, float(raw)))
+        except ValueError as exc:
+            raise ParseError(f"bad rate {raw!r} for {fixing_date.isoformat()}") from exc
 
     if not rows:
         raise ParseError("no rate rows found in response")

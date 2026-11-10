@@ -23,6 +23,14 @@ def test_empty_value_raises_instead_of_being_skipped():
         parse((FIXTURES / "smbs_empty_value.xml").read_bytes())
 
 
+def test_malformed_date_or_rate_is_a_parse_error():
+    """ValueError 로 새면 호출부의 except 를 지나쳐 수집 전체가 죽는다."""
+    with pytest.raises(ParseError, match="bad rate"):
+        parse(b"<set label='26.09.17' value='1,368.3'/>")
+    with pytest.raises(ParseError, match="bad date"):
+        parse(b"<set label='26.13.40' value='1368.3'/>")
+
+
 def test_no_rows_raises():
     with pytest.raises(ParseError, match="no rate rows"):
         parse(b"<chart></chart>")
