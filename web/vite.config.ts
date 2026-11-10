@@ -65,7 +65,7 @@ const JA_TITLE = "韓国免税店の為替レート - 今日と明日"
 const JA_GUIDE_TITLE = "韓国免税店の為替レートの決まり方"
 const JA_GUIDE_DESCRIPTION =
   "韓国免税店の価格は米ドルで決められ、前営業日に公表されたレートでウォンに換算されます。" +
-  "どのレートが適用されるのか、明日のレートがもう分かる理由を解説します。"
+  "適用されるレート、カード払いでウォンを選ぶ理由、明日のレートがもう分かる理由を解説します。"
 
 const FOREIGN = {
   en: { locale: "en_US", og: "See the exchange rate Korean duty free shops apply today and tomorrow." },
