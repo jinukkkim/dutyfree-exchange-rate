@@ -8,6 +8,9 @@ dist/
 .env.local
 *.egg-info/
 
+# PR 리뷰 워크플로가 요약 코멘트를 쓰는 임시 파일 (claude-code-review.yml).
+.pr-review/
+
 # wrangler 의 로컬 상태와 시크릿 파일. .dev.vars 에는 토큰이 들어갈 수 있다.
 .wrangler/
 .dev.vars
