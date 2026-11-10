@@ -29,11 +29,16 @@ export function parseRates(csv: string): Rate[] {
 /** /ja 의 엔 환산 참고값. data/jpy.csv 의 마지막 행 (원/100엔 재정환율). */
 export type Yen = { fixingDate: string; krwPer100: number }
 
-export function latestYen(csv: string): Yen | null {
+export function latestYen(csv: string, today: string): Yen | null {
   const last = csv.trim().split("\n").slice(1).at(-1)
   if (!last) return null
   const [fixingDate, rate] = last.split(",")
-  return { fixingDate, krwPer100: Number(rate) }
+  const krwPer100 = Number(rate)
+  // 수집기의 범위 검사는 웹에서 돌지 않는다. 손으로 고치다 깨진 값이 約NaN円 으로 나가지 않게 한다.
+  if (!Number.isFinite(krwPer100) || krwPer100 <= 0) return null
+  // 엔 수집만 멈추면 달러 쪽 신선도 판정은 모른다. 낡은 엔 레이트로 환산하느니 숨긴다.
+  if (isStale(fixingDate, today)) return null
+  return { fixingDate, krwPer100 }
 }
 
 /**

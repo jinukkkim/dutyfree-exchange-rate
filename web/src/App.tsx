@@ -44,7 +44,7 @@ export default function App() {
   // lang="ko" 인 index.html 을 받으므로, 스크린리더·번역기가 본문을 한국어로 읽지 않게 맞춘다.
   document.documentElement.lang = lang
   const isGuide = route.replace(/^\/(en|ja)/, "") === "/guide"
-  const yen = lang === "ja" ? latestYen(jpyCsv) : null
+  const yen = lang === "ja" ? latestYen(jpyCsv, today) : null
   const siteName = pick(lang)("면세점 적용환율", "Korea Duty Free Exchange Rate", "韓国免税店の為替レート")
   const otherLangs = LANGS.filter((other) => other.code !== lang).map((other) => ({
     ...other,
