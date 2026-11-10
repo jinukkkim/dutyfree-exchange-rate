@@ -31,6 +31,14 @@
       "destination": "/en-guide.html"
     },
     {
+      "source": "/ja",
+      "destination": "/ja.html"
+    },
+    {
+      "source": "/ja/guide",
+      "destination": "/ja-guide.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

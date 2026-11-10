@@ -4,9 +4,9 @@ import ratesCsv from "../../data/rates.csv?raw"
 
 import Footer from "./components/Footer"
 import RateChart from "./components/RateChart"
-import RateGuide, { RateGuideEn } from "./components/RateGuide"
+import RateGuide, { RateGuideEn, RateGuideJa } from "./components/RateGuide"
 import TodayTomorrow from "./components/TodayTomorrow"
-import type { Lang } from "./lib/format"
+import { pick, type Lang } from "./lib/format"
 import { parseRates } from "./lib/rates"
 
 // 전량이 100KB 수준이라 번들에 싣는다. fetch 폭포와 로딩 상태가 사라지고,
@@ -23,6 +23,12 @@ function todayKst(): string {
   }).format(new Date())
 }
 
+const LANGS: { code: Lang; prefix: string; label: string }[] = [
+  { code: "ko", prefix: "", label: "한국어" },
+  { code: "en", prefix: "/en", label: "English" },
+  { code: "ja", prefix: "/ja", label: "日本語" },
+]
+
 const SITE_TITLE = "text-[13px] font-semibold tracking-[-0.01em]"
 
 export default function App() {
@@ -32,13 +38,16 @@ export default function App() {
   // 끝의 / 를 떼어 /guide/ 도 같은 경로로 본다. "/" 는 ""가 되지만 어차피 else 다.
   const route = window.location.pathname.replace(/\/+$/, "")
   const today = todayKst()
-  const lang: Lang = route === "/en" || route.startsWith("/en/") ? "en" : "ko"
-  const isGuide = route === "/guide" || route === "/en/guide"
-  const siteName = lang === "en" ? "Korea Duty Free Exchange Rate" : "면세점 적용환율"
-  const otherLang =
-    lang === "en"
-      ? { href: isGuide ? "/guide" : "/", code: "ko", label: "한국어" }
-      : { href: isGuide ? "/en/guide" : "/en", code: "en", label: "English" }
+  const lang = (route.match(/^\/(en|ja)(?=\/|$)/)?.[1] ?? "ko") as Lang
+  // 언어별 정적 HTML 은 /en·/ja 와 그 /guide 뿐이다. /ja/foo 같은 나머지 경로는
+  // lang="ko" 인 index.html 을 받으므로, 스크린리더·번역기가 본문을 한국어로 읽지 않게 맞춘다.
+  document.documentElement.lang = lang
+  const isGuide = route.replace(/^\/(en|ja)/, "") === "/guide"
+  const siteName = pick(lang)("면세점 적용환율", "Korea Duty Free Exchange Rate", "韓国免税店の為替レート")
+  const otherLangs = LANGS.filter((other) => other.code !== lang).map((other) => ({
+    ...other,
+    href: other.prefix + (isGuide ? "/guide" : "") || "/",
+  }))
 
   return (
     <div className="flex min-h-screen flex-col bg-white text-ink">
@@ -52,21 +61,26 @@ export default function App() {
           ) : (
             <h1 className={SITE_TITLE}>{siteName}</h1>
           )}
-          <a
-            href={otherLang.href}
-            hrefLang={otherLang.code}
-            lang={otherLang.code}
-            className="shrink-0 text-[13px] text-link hover:underline"
-          >
-            {otherLang.label}
-          </a>
+          <nav aria-label={pick(lang)("언어", "Language", "言語")} className="flex shrink-0 gap-3">
+            {otherLangs.map((other) => (
+              <a
+                key={other.code}
+                href={other.href}
+                hrefLang={other.code}
+                lang={other.code}
+                className="text-[13px] text-link hover:underline"
+              >
+                {other.label}
+              </a>
+            ))}
+          </nav>
         </div>
       </header>
 
       <main className="flex-grow">
         {isGuide ? (
           <div className="mx-auto max-w-2xl">
-            {lang === "en" ? <RateGuideEn /> : <RateGuide />}
+            {pick(lang)(<RateGuide />, <RateGuideEn />, <RateGuideJa />)}
           </div>
         ) : (
           <>

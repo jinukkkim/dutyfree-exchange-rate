@@ -47,7 +47,7 @@ function ogPreview(): Plugin {
 }
 
 /**
- * /guide·/en·/en/guide 전용 HTML. 앱은 한 장짜리라 이 주소들도 index.html 을
+ * /guide·/en·/ja 와 그 /guide 전용 HTML. 앱은 한 장짜리라 이 주소들도 index.html 을
  * 받는데, 그러면 검색 결과에서 홈과 제목·설명이 같아 구분이 안 된다 (네이버 CTR 0.3%).
  * 크롤러는 JS 로 바꾼 제목을 읽지 않으니 빌드 결과를 복사해 제목·설명과,
  * 구글이 홈의 중복으로 묶지 않도록 canonical·hreflang·크롤러용 본문 문장을 바꾼다.
@@ -56,11 +56,21 @@ function ogPreview(): Plugin {
  */
 const ORIGIN = "https://dutyfreerate.com"
 const EN_TITLE = "Korea Duty Free Exchange Rate - Today and Tomorrow"
-const EN_OG_DESCRIPTION = "See the exchange rate Korean duty free shops apply today and tomorrow."
 const EN_GUIDE_TITLE = "How Korea Duty Free Exchange Rates Work"
 const EN_GUIDE_DESCRIPTION =
   "Korean duty free prices are set in US dollars and converted to won at a rate published on the " +
   "previous business day. Learn which rate applies and why tomorrow's is already known."
+
+const JA_TITLE = "韓国免税店の為替レート - 今日と明日"
+const JA_GUIDE_TITLE = "韓国免税店の為替レートの決まり方"
+const JA_GUIDE_DESCRIPTION =
+  "韓国免税店の価格は米ドルで決められ、前営業日に公表されたレートでウォンに換算されます。" +
+  "どのレートが適用されるのか、明日のレートがもう分かる理由を解説します。"
+
+const FOREIGN = {
+  en: { locale: "en_US", og: "See the exchange rate Korean duty free shops apply today and tomorrow." },
+  ja: { locale: "ja_JP", og: "韓国の免税店で今日と明日に適用される為替レートを確認できます。" },
+} as const
 
 const GUIDE_TITLE = "면세점 환율 적용 기준 - 매매기준율·적용환율·기준환율 차이"
 const GUIDE_DESCRIPTION =
@@ -70,25 +80,26 @@ const GUIDE_DESCRIPTION =
 type StaticPage = { file: string; path: string; title: string; description: string }
 
 function renderStaticPage(html: string, page: StaticPage): string {
-  const en = page.path.startsWith("/en")
-  const koPath = page.path.replace(/^\/en/, "") || "/"
-  const enPath = koPath === "/" ? "/en" : `/en${koPath}`
+  const lang = page.path.match(/^\/(en|ja)(?=\/|$)/)?.[1] as keyof typeof FOREIGN | undefined
+  const koPath = page.path.replace(/^\/(en|ja)/, "") || "/"
+  const localized = (code: string) => ORIGIN + (koPath === "/" ? `/${code}` : `/${code}${koPath}`)
   const edits: [RegExp, string][] = [
     [/(<title>)[^<]*/, page.title],
     [/(<meta\s+name="description"\s+content=")[^"]*/, page.description],
     [/(<link\s+rel="canonical"\s+href=")[^"]*/, ORIGIN + page.path],
     [/(<link\s+rel="alternate"\s+hreflang="ko"\s+href=")[^"]*/, ORIGIN + koPath],
-    [/(<link\s+rel="alternate"\s+hreflang="en"\s+href=")[^"]*/, ORIGIN + enPath],
-    [/(<link\s+rel="alternate"\s+hreflang="x-default"\s+href=")[^"]*/, ORIGIN + enPath],
+    [/(<link\s+rel="alternate"\s+hreflang="en"\s+href=")[^"]*/, localized("en")],
+    [/(<link\s+rel="alternate"\s+hreflang="ja"\s+href=")[^"]*/, localized("ja")],
+    [/(<link\s+rel="alternate"\s+hreflang="x-default"\s+href=")[^"]*/, localized("en")],
     [/(<div id="root">\s*<p[^>]*>)[^<]*/, page.description],
   ]
-  if (en) {
+  if (lang) {
     edits.push(
-      [/(<html\s+lang=")[^"]*/, "en"],
-      [/(<meta\s+property="og:locale"\s+content=")[^"]*/, "en_US"],
+      [/(<html\s+lang=")[^"]*/, lang],
+      [/(<meta\s+property="og:locale"\s+content=")[^"]*/, FOREIGN[lang].locale],
       [/(<meta\s+property="og:site_name"\s+content=")[^"]*/, "DutyFreeRate"],
       [/(<meta\s+property="og:title"\s+content=")[^"]*/, page.title],
-      [/(<meta\s+property="og:description"\s+content=")[^"]*/, EN_OG_DESCRIPTION],
+      [/(<meta\s+property="og:description"\s+content=")[^"]*/, FOREIGN[lang].og],
     )
   }
 
@@ -98,8 +109,8 @@ function renderStaticPage(html: string, page: StaticPage): string {
     if (!pattern.test(result)) throw new Error(`static-pages: ${page.file} 에서 ${pattern} 을 찾지 못함`)
     result = result.replace(pattern, (_match, head: string) => head + value)
   }
-  // 미리보기 이미지는 한국어뿐이라 영어 페이지에서는 뺀다.
-  return en ? result.replace(/\s*<meta\s+(?:property="og:image|name="twitter:card")[^>]*>/g, "") : result
+  // 미리보기 이미지는 한국어뿐이라 외국어 페이지에서는 뺀다.
+  return lang ? result.replace(/\s*<meta\s+(?:property="og:image|name="twitter:card")[^>]*>/g, "") : result
 }
 
 function staticPages(): Plugin {
@@ -116,6 +127,8 @@ function staticPages(): Plugin {
         { file: "guide.html", path: "/guide", title: GUIDE_TITLE, description: GUIDE_DESCRIPTION },
         { file: "en.html", path: "/en", title: EN_TITLE, description: searchDescription(readRates(), "en") },
         { file: "en-guide.html", path: "/en/guide", title: EN_GUIDE_TITLE, description: EN_GUIDE_DESCRIPTION },
+        { file: "ja.html", path: "/ja", title: JA_TITLE, description: searchDescription(readRates(), "ja") },
+        { file: "ja-guide.html", path: "/ja/guide", title: JA_GUIDE_TITLE, description: JA_GUIDE_DESCRIPTION },
       ]
       for (const page of pages) writeFileSync(join(outDir, page.file), renderStaticPage(html, page))
     },
