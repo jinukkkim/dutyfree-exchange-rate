@@ -29,7 +29,7 @@ const LANGS: { code: Lang; prefix: string; label: string }[] = [
   { code: "ja", prefix: "/ja", label: "日本語" },
 ]
 
-const SITE_TITLE ="text-[13px] font-semibold tracking-[-0.01em]"
+const SITE_TITLE = "text-[13px] font-semibold tracking-[-0.01em]"
 
 export default function App() {
   // 링크가 평범한 <a> 라서 페이지 전환이 곧 새 문서 로드다. 라우팅 상태도,
@@ -58,7 +58,7 @@ export default function App() {
           ) : (
             <h1 className={SITE_TITLE}>{siteName}</h1>
           )}
-          <nav className="flex shrink-0 gap-3">
+          <nav aria-label={pick(lang)("언어", "Language", "言語")} className="flex shrink-0 gap-3">
             {otherLangs.map((other) => (
               <a
                 key={other.code}
