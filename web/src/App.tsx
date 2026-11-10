@@ -40,6 +40,9 @@ export default function App() {
   const route = window.location.pathname.replace(/\/+$/, "")
   const today = todayKst()
   const lang = (route.match(/^\/(en|ja)(?=\/|$)/)?.[1] ?? "ko") as Lang
+  // 언어별 정적 HTML 은 /en·/ja 와 그 /guide 뿐이다. /ja/foo 같은 나머지 경로는
+  // lang="ko" 인 index.html 을 받으므로, 스크린리더·번역기가 본문을 한국어로 읽지 않게 맞춘다.
+  document.documentElement.lang = lang
   const isGuide = route.replace(/^\/(en|ja)/, "") === "/guide"
   const yen = lang === "ja" ? latestYen(jpyCsv) : null
   const siteName = pick(lang)("면세점 적용환율", "Korea Duty Free Exchange Rate", "韓国免税店の為替レート")
