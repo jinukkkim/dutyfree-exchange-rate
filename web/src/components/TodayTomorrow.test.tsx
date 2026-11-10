@@ -53,6 +53,18 @@ test("영어판은 단위를 밝히고 영어 가이드로 보내며 오천엔 �
   expect(screen.queryByRole("link", { name: /오천엔/ })).not.toBeInTheDocument()
 })
 
+test("일본어판은 단위를 밝히고 일본어 가이드로 보내며 오천엔 배너를 숨긴다", () => {
+  withUserAgent("iPhone", () => {
+    render(<TodayTomorrow rates={parseRates(CSV)} today="2026-09-17" lang="ja" />)
+  })
+
+  expect(screen.getByText("今日 · 9/17(木)")).toBeInTheDocument()
+  expect(screen.getByText("明日 · 9/18(金)")).toBeInTheDocument()
+  expect(screen.getByText(/1ドルあたりのウォン/)).toBeInTheDocument()
+  expect(screen.getByRole("link", { name: /レートの決まり方/ })).toHaveAttribute("href", "/ja/guide")
+  expect(screen.queryByRole("link", { name: /오천엔/ })).not.toBeInTheDocument()
+})
+
 function withUserAgent(ua: string, run: () => void) {
   const original = navigator.userAgent
   Object.defineProperty(navigator, "userAgent", { configurable: true, value: ua })

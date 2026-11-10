@@ -220,6 +220,57 @@ $100 × 1,400.00 = ₩140,000`}
   )
 }
 
+/** 일본어 설명. 영어판과 같은 네 가지를 같은 순서로 쓴다. 한쪽을 고치면 다른 쪽도 맞춘다. */
+export function RateGuideJa() {
+  return (
+    <article className="px-4 pb-16 pt-10 text-slate-700">
+      <p className="text-sm">
+        <a href="/ja" className="text-slate-500 underline underline-offset-2">
+          ← 今日のレートに戻る
+        </a>
+      </p>
+
+      <h1 className="mt-6 text-3xl font-bold tracking-tight text-slate-900">
+        韓国の免税店では、どの為替レートが使われる?
+      </h1>
+      <p className="mt-4 leading-relaxed">
+        為替アプリやニュースで見るレートとは違います。韓国の免税店が使うレートは一つだけで、規定で決められています。
+      </p>
+
+      <Section title="規定で決まった一つのレート">
+        <p>
+          免税店は、販売日の直前の公表日に公表された基準レートを使わなければなりません。この基準レートは、ソウル外国為替仲介(Seoul
+          Money Brokerage Services)が営業日ごとに韓国時間午前8時に1回公表します。その日のうちは変わらないため、ロッテ・新羅・新世界・現代のどの免税店でも同じレートが適用されます。
+        </p>
+      </Section>
+
+      <Section title="ドル価格がウォンになるまで">
+        <p>韓国の免税店の価格は米ドルで決められています。ウォンでの金額は、ドル価格にこのレートを掛けたものです。</p>
+        <pre className="mt-3 overflow-x-auto rounded bg-slate-50 p-4 text-xs leading-relaxed text-slate-600">
+{`レート 1,400.00 の場合
+$100 × 1,400.00 = ₩140,000`}
+        </pre>
+      </Section>
+
+      <Section title="明日のレートがもう分かる理由">
+        <p>
+          今朝公表されたレートが、明日の免税店レートになります。このサイトが明日の数字を表示できるのはそのためで、予測ではなく、すでに公表されたレートです。明後日のレートは次の公表まで分かりません。
+        </p>
+      </Section>
+
+      <Section title="週末・祝日">
+        <p>
+          週末と祝日はレートが公表されないため、直前に公表されたレートが引き続き適用されます。たとえば金曜日の朝に公表されたレートは、土・日・月曜日に適用されます。
+        </p>
+      </Section>
+
+      <p className="mt-10 border-t pt-4 text-xs leading-relaxed text-slate-400">
+        根拠: 外国為替取引規定 第1-2条(7) · 保税販売場の運営に関する告示 第3条第4項 · ソウル外国為替仲介 基準レート
+      </p>
+    </article>
+  )
+}
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-10">

@@ -2,7 +2,7 @@ import { createRequire } from "node:module"
 
 import { Resvg } from "@resvg/resvg-js"
 
-import { formatDayLabel, formatRate, type Lang } from "./src/lib/format"
+import { formatDayLabel, formatRate, pick, type Lang } from "./src/lib/format"
 import { nextFixingDate } from "./src/lib/freshness"
 import { appliedOn, nextDay, type Rate } from "./src/lib/rates"
 
@@ -40,12 +40,12 @@ export function searchDescription(rates: Rate[], lang: Lang = "ko"): string {
   const latest = rates.at(-1)
   if (!latest) throw new Error("og: rates.csv 에 고시가 없음")
 
-  const en = lang === "en"
+  const t = pick(lang)
   const day = (iso: string) => formatDayLabel(iso, lang)
   const from = nextDay(latest.fixingDate)
   const through = nextFixingDate(latest.fixingDate)
   const period =
-    through && through > from ? `${day(from)}${en ? " - " : "~"}${day(through)}` : day(from)
+    through && through > from ? `${day(from)}${t("~", " - ", "〜")}${day(through)}` : day(from)
 
   const current = appliedOn(rates, latest.fixingDate)
   let comparison = ""
@@ -53,21 +53,25 @@ export function searchDescription(rates: Rate[], lang: Lang = "ko"): string {
     const delta = latest.rate - current.rate
     const change = formatRate(Math.abs(delta))
     const before = formatRate(current.rate)
-    const was = `${day(latest.fixingDate)} ${before}원`
-    if (en) {
-      const move = delta === 0 ? "unchanged" : `${delta > 0 ? "up" : "down"} ${change}`
-      comparison = `, ${move} from ${before} on ${day(latest.fixingDate)}`
-    } else {
-      comparison =
-        delta === 0 ? `, ${was}에서 변동 없음` : `, ${was}보다 ${change}원 ${delta > 0 ? "오름" : "내림"}`
-    }
+    const was = day(latest.fixingDate)
+    const up = delta > 0
+    comparison =
+      delta === 0
+        ? t(`, ${was} ${before}원에서 변동 없음`, `, unchanged from ${before} on ${was}`, `、${was}の${before}ウォンから変動なし`)
+        : t(
+            `, ${was} ${before}원보다 ${change}원 ${up ? "오름" : "내림"}`,
+            `, ${up ? "up" : "down"} ${change} from ${before} on ${was}`,
+            `、${was}の${before}ウォンから${change}ウォン${up ? "上昇" : "下落"}`,
+          )
   }
 
   const fixed = day(latest.fixingDate).split("(")[0].trim()
   const rate = formatRate(latest.rate)
-  return en
-    ? `Korea duty free exchange rate. ${period} 1 USD = ${rate} KRW${comparison}. Published ${fixed}.`
-    : `오늘·내일 면세점 환율. ${period} 1달러 ${rate}원${comparison}. ${fixed} 고시로 확정.`
+  return t(
+    `오늘·내일 면세점 환율. ${period} 1달러 ${rate}원${comparison}. ${fixed} 고시로 확정.`,
+    `Korea duty free exchange rate. ${period} 1 USD = ${rate} KRW${comparison}. Published ${fixed}.`,
+    `韓国免税店の為替レート。${period} 1ドル = ${rate}ウォン${comparison}。${fixed}公表。`,
+  )
 }
 
 const require = createRequire(import.meta.url)

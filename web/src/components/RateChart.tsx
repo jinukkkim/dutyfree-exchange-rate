@@ -1,14 +1,14 @@
 import { useMemo, useState } from "react"
 
-import { formatDayLabel, formatRate, type Lang } from "../lib/format"
+import { formatDayLabel, formatRate, pick, type Lang } from "../lib/format"
 import { isTomorrowConfirmed, nextDay, type Rate } from "../lib/rates"
 
 const RANGES = [
-  { label: "1개월", en: "1M", days: 30 },
-  { label: "6개월", en: "6M", days: 182 },
-  { label: "1년", en: "1Y", days: 365 },
-  { label: "5년", en: "5Y", days: 1826 },
-  { label: "전체", en: "All", days: Number.POSITIVE_INFINITY },
+  { ko: "1개월", en: "1M", ja: "1か月", days: 30 },
+  { ko: "6개월", en: "6M", ja: "6か月", days: 182 },
+  { ko: "1년", en: "1Y", ja: "1年", days: 365 },
+  { ko: "5년", en: "5Y", ja: "5年", days: 1826 },
+  { ko: "전체", en: "All", ja: "全期間", days: Number.POSITIVE_INFINITY },
 ] as const
 
 const DEFAULT_DAYS = 30
@@ -44,7 +44,7 @@ export default function RateChart({
   today: string
   lang?: Lang
 }) {
-  const en = lang === "en"
+  const t = pick(lang)
   const [days, setDays] = useState<number>(DEFAULT_DAYS)
   const [hover, setHover] = useState<number | null>(null)
 
@@ -90,11 +90,13 @@ export default function RateChart({
   if (visible.length < 2) {
     return (
       <section className="px-6 pb-16 pt-10 text-center">
-        <ChartHeader days={days} setDays={setDays} en={en} />
+        <ChartHeader days={days} setDays={setDays} lang={lang} />
         <p className="py-10 text-[17px] text-muted">
-          {en
-            ? "No rates were published in this period. Please choose a longer one."
-            : "이 구간에는 고시가 없습니다. 더 긴 구간을 선택해 주세요."}
+          {t(
+            "이 구간에는 고시가 없습니다. 더 긴 구간을 선택해 주세요.",
+            "No rates were published in this period. Please choose a longer one.",
+            "この期間に公表されたレートはありません。より長い期間を選んでください。",
+          )}
         </p>
       </section>
     )
@@ -147,7 +149,7 @@ export default function RateChart({
 
   return (
     <section className="px-6 pb-16 pt-10 text-center">
-      <ChartHeader days={days} setDays={setDays} en={en} />
+      <ChartHeader days={days} setDays={setDays} lang={lang} />
 
       <div className="mx-auto mt-3 max-w-page px-6 pb-4">
         {/* 위쪽 pt-7 은 hover 라벨 자리다. 라벨이 점을 가리지 않도록 차트 밖에 둔다. */}
@@ -156,11 +158,11 @@ export default function RateChart({
             viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
             className="block w-full touch-none"
             role="img"
-            aria-label={
-              en
-                ? `Duty free rate history, low ${formatRate(min)}, high ${formatRate(max)}`
-                : `적용환율 추이, 최저 ${formatRate(min)} 최고 ${formatRate(max)}`
-            }
+            aria-label={t(
+              `적용환율 추이, 최저 ${formatRate(min)} 최고 ${formatRate(max)}`,
+              `Duty free rate history, low ${formatRate(min)}, high ${formatRate(max)}`,
+              `免税店レートの推移、最低 ${formatRate(min)}、最高 ${formatRate(max)}`,
+            )}
             onMouseMove={(event) => pointAt(event.clientX, event.currentTarget)}
             onMouseLeave={() => setHover(null)}
             onTouchMove={(event) => {
@@ -248,7 +250,7 @@ export default function RateChart({
                 textAnchor="middle"
                 className="fill-sub text-[10px]"
               >
-                {en ? "Today" : "오늘"}
+                {t("오늘", "Today", "今日")}
               </text>
             )}
 
@@ -291,7 +293,7 @@ export default function RateChart({
               </span>
               <span className="text-[12px] text-muted">
                 {formatDayLabel(hovered.date, lang)}
-                {hovered.date > today ? (en ? " · Tomorrow" : " · 내일") : ""}
+                {hovered.date > today ? t(" · 내일", " · Tomorrow", " · 明日") : ""}
               </span>
             </div>
           )}
@@ -305,21 +307,21 @@ export default function RateChart({
 function ChartHeader({
   days,
   setDays,
-  en,
+  lang,
 }: {
   days: number
   setDays: (days: number) => void
-  en: boolean
+  lang: Lang
 }) {
   return (
     <div className="mx-auto max-w-page">
       <h2 className="text-[24px] font-semibold tracking-[-0.02em] sm:text-[32px]">
-        {en ? "Rate History" : "적용환율 추이"}
+        {pick(lang)("적용환율 추이", "Rate History", "レート推移")}
       </h2>
       <div className="mt-6 inline-flex flex-wrap justify-center gap-2">
         {RANGES.map((range) => (
           <button
-            key={range.label}
+            key={range.days}
             type="button"
             onClick={() => setDays(range.days)}
             className={
@@ -328,7 +330,7 @@ function ChartHeader({
                 : "rounded-full px-[18px] py-2 text-[15px] font-medium tracking-[-0.01em] text-ink hover:bg-black/5"
             }
           >
-            {en ? range.en : range.label}
+            {range[lang]}
           </button>
         ))}
       </div>
