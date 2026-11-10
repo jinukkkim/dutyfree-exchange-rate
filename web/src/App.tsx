@@ -1,5 +1,6 @@
 import { Analytics } from "@vercel/analytics/react"
 
+import jpyCsv from "../../data/jpy.csv?raw"
 import ratesCsv from "../../data/rates.csv?raw"
 
 import Footer from "./components/Footer"
@@ -7,7 +8,7 @@ import RateChart from "./components/RateChart"
 import RateGuide, { RateGuideEn, RateGuideJa } from "./components/RateGuide"
 import TodayTomorrow from "./components/TodayTomorrow"
 import { pick, type Lang } from "./lib/format"
-import { parseRates } from "./lib/rates"
+import { latestYen, parseRates } from "./lib/rates"
 
 // 전량이 100KB 수준이라 번들에 싣는다. fetch 폭포와 로딩 상태가 사라지고,
 // "두 숫자"가 첫 페인트에 이미 들어 있다.
@@ -40,6 +41,7 @@ export default function App() {
   const today = todayKst()
   const lang = (route.match(/^\/(en|ja)(?=\/|$)/)?.[1] ?? "ko") as Lang
   const isGuide = route.replace(/^\/(en|ja)/, "") === "/guide"
+  const yen = lang === "ja" ? latestYen(jpyCsv) : null
   const siteName = pick(lang)("면세점 적용환율", "Korea Duty Free Exchange Rate", "韓国免税店の為替レート")
   const otherLangs = LANGS.filter((other) => other.code !== lang).map((other) => ({
     ...other,
@@ -81,13 +83,13 @@ export default function App() {
           </div>
         ) : (
           <>
-            <TodayTomorrow rates={rates} today={today} lang={lang} />
+            <TodayTomorrow rates={rates} today={today} lang={lang} yen={yen} />
             <RateChart rates={rates} today={today} lang={lang} />
           </>
         )}
       </main>
 
-      <Footer latestFixingDate={rates.at(-1)?.fixingDate} lang={lang} />
+      <Footer latestFixingDate={rates.at(-1)?.fixingDate} lang={lang} yen={yen} />
 
       {/* 운영 확인용 방문자 집계. 프로덕션에서만 전송하고 dev 에선 no-op 이다.
           경로가 진짜 URL 이라 /guide 가 제 몫으로 잡힌다. */}

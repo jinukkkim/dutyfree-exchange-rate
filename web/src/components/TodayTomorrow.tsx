@@ -9,6 +9,7 @@ import {
   nextDay,
   tomorrowValidThrough,
   type Rate,
+  type Yen,
 } from "../lib/rates"
 
 const APP_STORE_URL = "https://apps.apple.com/kr/app/id6829470220"
@@ -20,10 +21,12 @@ export default function TodayTomorrow({
   rates,
   today,
   lang = "ko",
+  yen = null,
 }: {
   rates: Rate[]
   today: string
   lang?: Lang
+  yen?: Yen | null
 }) {
   const en = lang === "en"
   const t = pick(lang)
@@ -72,6 +75,17 @@ export default function TodayTomorrow({
   const delta = tomorrowRate ? tomorrowRate.rate - todayRate.rate : null
   const pending = isTomorrowPending(rates, today)
 
+  /* 원이 와닿지 않는 일본인을 위해 1달러가 몇 엔인지 숫자 아래에 적는다 (/ja 만).
+     두 숫자에 같은 엔 레이트를 곱해야 엔 값의 차이가 곧 면세 환율의 차이가 된다.
+     어느 날 레이트인지와 수수료 제외는 푸터가 말한다.
+     대기 안내 줄과 같은 자리라 흐름에서 빼고, 아래 자리는 pb-7 이 비운다. */
+  const yenLine = (krw: number) =>
+    yen && (
+      <div className="absolute left-1/2 mt-2 -translate-x-1/2 whitespace-nowrap text-[13px] tabular-nums text-muted sm:text-[14px]">
+        {`約${((krw * 100) / yen.krwPer100).toFixed(1)}円`}
+      </div>
+    )
+
   // 토요일·연휴 앞은 끝나는 날을, 일요일·연휴 마지막 날은 어느 고시인지를 적는다.
   const validThrough = tomorrowValidThrough(rates, today)
   const carried = carriedUntilTomorrow(rates, today)
@@ -109,16 +123,17 @@ export default function TodayTomorrow({
       {/* 대기 안내 줄은 흐름 밖이라 아래 링크와 겹치지 않게 자리를 따로 비운다. */}
       <div
         className={`mx-auto flex max-w-page items-center justify-center gap-4 sm:gap-10 ${
-          pending ? "pb-7" : ""
+          pending || yen ? "pb-7" : ""
         }`}
       >
-        <div>
+        <div className="relative">
           <div className="text-[15px] tracking-[-0.01em] text-muted sm:text-[17px]">
             {dayHeading(t("오늘", "Today", "今日"), today)}
           </div>
           <div className={BIG_NUMBER}>
             {formatRate(todayRate.rate)}
           </div>
+          {yenLine(todayRate.rate)}
         </div>
 
         {/* 화살표는 오늘에서 내일로 간다는 표시일 뿐이라 한 색으로 두고,
@@ -167,9 +182,12 @@ export default function TodayTomorrow({
             {dayHeading(t("내일", "Tomorrow", "明日"), nextDay(today))}
           </div>
           {tomorrowRate ? (
-            <div className={BIG_NUMBER}>
-              {formatRate(tomorrowRate.rate)}
-            </div>
+            <>
+              <div className={BIG_NUMBER}>
+                {formatRate(tomorrowRate.rate)}
+              </div>
+              {yenLine(tomorrowRate.rate)}
+            </>
           ) : stale ? (
             <div className="mt-4 text-[15px] text-muted sm:text-[17px]">
               {staleNotice}

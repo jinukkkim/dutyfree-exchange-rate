@@ -26,6 +26,16 @@ export function parseRates(csv: string): Rate[] {
     .sort((a, b) => a.fixingDate.localeCompare(b.fixingDate))
 }
 
+/** /ja 의 엔 환산 참고값. data/jpy.csv 의 마지막 행 (원/100엔 재정환율). */
+export type Yen = { fixingDate: string; krwPer100: number }
+
+export function latestYen(csv: string): Yen | null {
+  const last = csv.trim().split("\n").slice(1).at(-1)
+  if (!last) return null
+  const [fixingDate, rate] = last.split(",")
+  return { fixingDate, krwPer100: Number(rate) }
+}
+
 /**
  * targetISO 일에 적용되는 환율.
  *
