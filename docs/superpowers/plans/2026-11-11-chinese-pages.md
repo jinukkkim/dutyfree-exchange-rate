@@ -47,8 +47,8 @@
 
 ## Verification
 
-- `npm test`: 91 tests passed across 8 files, including follow-up currency conversions and middle-dot formatting.
-- Collector `.venv/bin/python -m pytest -q`: 64 tests passed after review fixes, including isolation of malformed ECB days. Live fetch returned CNY/HKD history for 64 publication days (2026-08-13–2026-11-10), plus 8 TWD rows. No local data or git writes during the live check.
+- `npm test`: 99 tests passed across 9 files, including lowercase Chinese routes, hosting aliases, currency conversions and middle-dot formatting.
+- Collector `.venv/bin/python -m pytest -q`: 71 tests passed after review fixes, including isolation of unrelated/malformed currency quotes and dates, and changed-row commit dates. Live fetch returned CNY/HKD history for 64 publication days (2026-08-13–2026-11-10), plus 8 TWD rows. No local data or git writes during the live check.
 - `npm run build`: TypeScript and Vite passed.
 - Production artifact checks: all 10 pages passed rewrite ordering, language, canonical, reciprocal hreflang, description, Open Graph and sitemap checks.
 - `git diff --check`: passed. Independent read-only review: no remaining findings.
@@ -83,3 +83,6 @@
 - [x] Keep the intentional mobile header behavior and describe its effect on all language pages in the PR.
 - [x] Include conversion text in each column's width calculation while preserving number positions with a zero-height wrapper and the existing reserved bottom space. Keep Traditional Chinese on one line and use 12px text below `sm` when showing both currencies.
 - [x] Verify 91 web tests, 64 collector tests and the production build. Native Chrome verification timed out; actual mobile rendering remains unverified.
+- [x] Parse only KRW/CNY/HKD and validate CNY/HKD independently so unrelated or malformed currency quotes do not discard valid quotes.
+- [x] Use actual changed reference rows to choose the reference-only commit date, including historical additions and corrections.
+- [x] Serve lowercase Chinese home/guide aliases with the same static HTML and canonical metadata, and normalize their runtime language and internal links.

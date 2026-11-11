@@ -55,6 +55,22 @@
       "destination": "/zh-Hant-guide.html"
     },
     {
+      "source": "/zh-hans",
+      "destination": "/zh-Hans.html"
+    },
+    {
+      "source": "/zh-hans/guide",
+      "destination": "/zh-Hans-guide.html"
+    },
+    {
+      "source": "/zh-hant",
+      "destination": "/zh-Hant.html"
+    },
+    {
+      "source": "/zh-hant/guide",
+      "destination": "/zh-Hant-guide.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

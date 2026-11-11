@@ -61,6 +61,19 @@ test("중국어 코드 뒤에 경로 경계가 없으면 한국어로 처리한�
   expect(document.documentElement.lang).toBe("ko")
 })
 
+test.each([
+  { path: "/zh-hans", lang: "zh-Hans", heading: "韩国免税店汇率", back: "/zh-Hans/guide" },
+  { path: "/zh-hant", lang: "zh-Hant", heading: "韓國免稅店匯率", back: "/zh-Hant/guide" },
+  { path: "/zh-hans/guide/", lang: "zh-Hans", heading: "韩国免税店使用哪种汇率？", back: "/zh-Hans" },
+  { path: "/zh-hant/guide/", lang: "zh-Hant", heading: "韓國免稅店使用哪種匯率？", back: "/zh-Hant" },
+])("소문자 $path도 같은 중국어 페이지와 정식 경로 링크를 사용한다", ({ path, lang, heading, back }) => {
+  window.history.replaceState({}, "", path)
+  render(<App />)
+  expect(document.documentElement.lang).toBe(lang)
+  expect(screen.getByRole("heading", { level: 1, name: heading })).toBeInTheDocument()
+  expect(screen.getByRole("link", { name: /了解|←/ })).toHaveAttribute("href", back)
+})
+
 test.each(chinese)("$lang 공유 복사 실패도 번역한다", async ({ lang }) => {
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,

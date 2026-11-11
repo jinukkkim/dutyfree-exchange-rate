@@ -40,7 +40,10 @@ export default function App() {
   // 스크롤 리셋도 브라우저가 한다. 대신 /guide 직접 접속이 index.html 로
   // 떨어져야 하고, 그 몫은 vercel.json 의 rewrite 가 진다.
   // 끝의 / 를 떼어 /guide/ 도 같은 경로로 본다. "/" 는 ""가 되지만 어차피 else 다.
-  const route = window.location.pathname.replace(/\/+$/, "")
+  const route = window.location.pathname
+    .replace(/\/+$/, "")
+    .replace(/^\/zh-hans(?=\/|$)/i, "/zh-Hans")
+    .replace(/^\/zh-hant(?=\/|$)/i, "/zh-Hant")
   const today = todayKst()
   const lang = (route.match(/^\/(en|ja|zh-Hans|zh-Hant)(?=\/|$)/)?.[1] ?? "ko") as Lang
   // 언어별 정적 HTML 은 각 언어 홈과 /guide 뿐이다. /ja/foo 같은 나머지 경로는
