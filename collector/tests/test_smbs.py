@@ -1,11 +1,36 @@
 from datetime import date
 from pathlib import Path
 
+import httpx
 import pytest
 
+from dfx import smbs
 from dfx.smbs import ParseError, parse
 
 FIXTURES = Path(__file__).parent / "fixtures"
+
+
+@pytest.mark.parametrize("currency", ["USD", "JPY", "TWD"])
+def test_shared_fetch_sends_currency_dates_and_xml_headers(currency):
+    def handle(request):
+        assert request.url.params["arr_value"] == f"{currency}_2026-11-01_2026-11-10"
+        assert request.headers["X-Requested-With"] == "XMLHttpRequest"
+        assert request.headers["User-Agent"].startswith("duty-free-exchange-rate/")
+        return httpx.Response(200, content=b"<chart><set label='26.11.10' value='100.5'/></chart>")
+
+    with httpx.Client(transport=httpx.MockTransport(handle)) as client:
+        assert smbs.fetch_window(client, date(2026, 11, 1), date(2026, 11, 10), currency) == [
+            (date(2026, 11, 10), 100.5),
+        ]
+
+
+def test_shared_fetch_preserves_http_and_parse_errors():
+    with httpx.Client(transport=httpx.MockTransport(lambda _: httpx.Response(503))) as client:
+        with pytest.raises(httpx.HTTPStatusError):
+            smbs.fetch_window(client, date(2026, 11, 1), date(2026, 11, 10))
+    with httpx.Client(transport=httpx.MockTransport(lambda _: httpx.Response(200, content=b"<chart/>"))) as client:
+        with pytest.raises(ParseError):
+            smbs.fetch_window(client, date(2026, 11, 1), date(2026, 11, 10))
 
 
 def test_parses_euc_kr_and_sorts_by_fixing_date():

@@ -1,0 +1,133 @@
+from datetime import date
+
+import httpx
+import pytest
+
+from dfx import reference
+from dfx.store import ReferenceRate, read_reference_rates, write_reference_rates
+
+ECB = b'''<gesmes:Envelope xmlns:gesmes="http://www.gesmes.org/xml/2002-08-01"
+ xmlns="http://www.ecb.int/vocabulary/2002-08-01/eurofxref">
+ <Cube><Cube time="2026-11-10"><Cube currency="KRW" rate="1500"/>
+ <Cube currency="CNY" rate="7.5"/><Cube currency="HKD" rate="8"/></Cube></Cube>
+ </gesmes:Envelope>'''
+TWD = b"<chart><set label='26.11.10' value='41.33' /></chart>"
+DAY = date(2026, 11, 10)
+HISTORY = ECB.replace(
+    b"</Cube></Cube>",
+    b'''</Cube><Cube time="2026-11-09"><Cube currency="KRW" rate="1480"/>
+    <Cube currency="CNY" rate="7.4"/><Cube currency="HKD" rate="8"/></Cube></Cube>''',
+)
+
+
+def test_ecb_euro_quotes_become_krw_per_one_currency():
+    assert reference.parse_ecb(ECB, DAY) == [
+        ReferenceRate(DAY, "CNY", 200, "ecb"),
+        ReferenceRate(DAY, "HKD", 187.5, "ecb"),
+    ]
+
+
+def test_ecb_history_recovers_missed_days_and_returns_chronological_rows():
+    assert reference.parse_ecb(HISTORY, DAY) == [
+        ReferenceRate(date(2026, 11, 9), "CNY", 200, "ecb"),
+        ReferenceRate(date(2026, 11, 9), "HKD", 185, "ecb"),
+        ReferenceRate(DAY, "CNY", 200, "ecb"),
+        ReferenceRate(DAY, "HKD", 187.5, "ecb"),
+    ]
+
+
+def test_ecb_failure_is_recovered_from_the_next_history_response():
+    fail = True
+
+    def handle(request):
+        if request.url.host != "www.ecb.europa.eu":
+            return httpx.Response(200, content=TWD)
+        assert request.url.path == "/stats/eurofxref/eurofxref-hist-90d.xml"
+        return httpx.Response(503) if fail else httpx.Response(200, content=HISTORY)
+
+    with httpx.Client(transport=httpx.MockTransport(handle)) as client:
+        assert {r.currency for r in reference.fetch(client, date(2026, 11, 9), DAY)} == {"TWD"}
+        fail = False
+        recovered = reference.fetch(client, date(2026, 11, 9), DAY)
+    assert {(r.fixing_date, r.currency) for r in recovered if r.source == "ecb"} == {
+        (date(2026, 11, 9), "CNY"), (date(2026, 11, 9), "HKD"),
+        (DAY, "CNY"), (DAY, "HKD"),
+    }
+
+
+@pytest.mark.parametrize("bad", [b"0", b"NaN", b"0.075", b"inf", b"broken", b""])
+def test_bad_cny_does_not_hide_good_hkd(bad):
+    assert reference.parse_ecb(ECB.replace(b'"7.5"', b'"' + bad + b'"'), DAY) == [
+        ReferenceRate(DAY, "HKD", 187.5, "ecb"),
+    ]
+
+
+@pytest.mark.parametrize("quote", [b'<Cube currency="BGN" rate="broken"/>', b'<Cube currency="BGN"/>'])
+def test_unrelated_currency_errors_do_not_discard_used_quotes(quote):
+    body = ECB.replace(b"</Cube></Cube>", quote + b"</Cube></Cube>")
+    assert reference.parse_ecb(body, DAY) == [
+        ReferenceRate(DAY, "CNY", 200, "ecb"),
+        ReferenceRate(DAY, "HKD", 187.5, "ecb"),
+    ]
+
+
+def test_missing_cny_rate_does_not_discard_hkd():
+    body = ECB.replace(b'currency="CNY" rate="7.5"', b'currency="CNY"')
+    assert reference.parse_ecb(body, DAY) == [ReferenceRate(DAY, "HKD", 187.5, "ecb")]
+
+
+def test_future_ecb_cube_is_skipped():
+    assert reference.parse_ecb(ECB, date(2026, 11, 9)) == []
+
+
+def test_bad_cube_does_not_discard_good_cubes():
+    bad_krw = HISTORY.replace(b'rate="1480"', b'rate="0"')
+    assert reference.parse_ecb(bad_krw, DAY) == [
+        ReferenceRate(DAY, "CNY", 200, "ecb"),
+        ReferenceRate(DAY, "HKD", 187.5, "ecb"),
+    ]
+
+
+@pytest.mark.parametrize("body", [b"broken xml"])
+def test_bad_ecb_document_is_rejected(body):
+    with pytest.raises(ValueError):
+        reference.parse_ecb(body, DAY)
+
+
+def test_all_cubes_missing_krw_returns_empty():
+    body = ECB.replace(b'"KRW"', b'"USD"')
+    assert reference.parse_ecb(body, DAY) == []
+
+
+@pytest.mark.parametrize("failed", ["ecb", "smbs", None])
+def test_sources_can_fail_independently(failed):
+    def handle(request):
+        source = "ecb" if request.url.host == "www.ecb.europa.eu" else "smbs"
+        if source == failed:
+            return httpx.Response(503)
+        if source == "smbs":
+            assert "TWD_2026-11-01_2026-11-10" in str(request.url)
+        return httpx.Response(200, content=ECB if source == "ecb" else TWD)
+
+    with httpx.Client(transport=httpx.MockTransport(handle)) as client:
+        rows = reference.fetch(client, date(2026, 11, 1), DAY)
+    currencies = {row.currency for row in rows}
+    assert currencies == {"ecb": {"TWD"}, "smbs": {"CNY", "HKD"}, None: {"CNY", "TWD", "HKD"}}[failed]
+
+
+def test_twd_unit_changes_are_filtered_without_blocking_ecb():
+    with httpx.Client(transport=httpx.MockTransport(lambda req: httpx.Response(
+        200, content=ECB if req.url.host == "www.ecb.europa.eu" else TWD.replace(b"41.33", b"4133")
+    ))) as client:
+        assert {row.currency for row in reference.fetch(client, DAY, DAY)} == {"CNY", "HKD"}
+
+
+def test_reference_csv_round_trip_preserves_currency_source_and_precision(tmp_path):
+    path = tmp_path / "reference.csv"
+    assert read_reference_rates(path) == {}
+    rows = {
+        (DAY, "CNY"): ReferenceRate(DAY, "CNY", 200.73956230531677, "ecb"),
+        (DAY, "TWD"): ReferenceRate(DAY, "TWD", 41.33, "smbs"),
+    }
+    write_reference_rates(path, rows)
+    assert read_reference_rates(path) == rows

@@ -9,6 +9,10 @@ EUC-KR JSP 폼 POST 라 파싱이 훨씬 나쁘고, 이쪽은 한 번의 GET 으
 import re
 from datetime import date
 
+import httpx
+
+from dfx import HEADERS
+
 URL_TEMPLATE = (
     "http://www.smbs.biz/ExRate/StdExRate_xml.jsp?arr_value={code}_{start}_{end}"
 )
@@ -21,6 +25,15 @@ _SET = re.compile(r"label='(\d{2})\.(\d{2})\.(\d{2})'\s+value='([^']*)'")
 
 class ParseError(Exception):
     """응답이 왔지만 신뢰할 수 있는 환율을 뽑을 수 없음."""
+
+
+def fetch_window(
+    client: httpx.Client, start: date, end: date, code: str = "USD"
+) -> list[tuple[date, float]]:
+    url = URL_TEMPLATE.format(code=code, start=start.isoformat(), end=end.isoformat())
+    response = client.get(url, headers={**HEADERS, "X-Requested-With": "XMLHttpRequest"})
+    response.raise_for_status()
+    return parse(response.content)
 
 
 def parse(xml_bytes: bytes) -> list[tuple[date, float]]:

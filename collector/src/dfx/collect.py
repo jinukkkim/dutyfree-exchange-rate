@@ -19,6 +19,7 @@
 과거 값이 정정되면 그때 드러난다.
 """
 
+import csv
 import os
 import subprocess
 import sys
@@ -27,17 +28,19 @@ from pathlib import Path
 
 import httpx
 
-from dfx import ecos, smbs, ssgdfs
+from dfx import HEADERS, ecos, reference, smbs, ssgdfs
 from dfx.fixing import KST, fixing_for, today_kst
 from dfx.store import (
     Row,
     method_for,
     read_jpy,
     read_rates,
+    read_reference_rates,
     read_seen,
     upsert,
     write_jpy,
     write_rates,
+    write_reference_rates,
     write_seen,
 )
 from dfx.validate import ValidationError, check_range, is_abnormal_move
@@ -46,22 +49,11 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 RATES_PATH = REPO_ROOT / "data" / "rates.csv"
 ECOS_SEEN_PATH = REPO_ROOT / "data" / "ecos_seen.csv"
 JPY_PATH = REPO_ROOT / "data" / "jpy.csv"
+REFERENCE_PATH = REPO_ROOT / "data" / "reference.csv"
 
 OVERLAP_DAYS = 10
 STALE_AFTER_DAYS = 7  # 한국 최장 연휴가 설·추석 + 주말로 5일 안팎이다
 TIMEOUT = httpx.Timeout(45.0)
-HEADERS = {"User-Agent": "duty-free-exchange-rate/1.0 (+https://github.com)"}
-
-
-def fetch_window(
-    client: httpx.Client, start: date, end: date, code: str = "USD"
-) -> list[tuple[date, float]]:
-    url = smbs.URL_TEMPLATE.format(
-        code=code, start=start.isoformat(), end=end.isoformat()
-    )
-    response = client.get(url, headers={**HEADERS, "X-Requested-With": "XMLHttpRequest"})
-    response.raise_for_status()
-    return smbs.parse(response.content)
 
 
 def fetch_jpy(client: httpx.Client, start: date, end: date) -> list[tuple[date, float]] | None:
@@ -73,7 +65,7 @@ def fetch_jpy(client: httpx.Client, start: date, end: date) -> list[tuple[date, 
     단위가 바뀌는 식의 형식 변경이면 모든 행이 걸러져 결국 아무것도 쓰지 않는다.
     """
     try:
-        rows = fetch_window(client, start, end, "JPY")
+        rows = smbs.fetch_window(client, start, end, "JPY")
     except (httpx.HTTPError, smbs.ParseError) as exc:
         print(f"WARN jpy unavailable: {exc}", file=sys.stderr)
         return None
@@ -169,12 +161,13 @@ def main() -> int:
     with httpx.Client(timeout=TIMEOUT, transport=httpx.HTTPTransport(retries=3)) as client:
         start = today - timedelta(days=OVERLAP_DAYS)
         try:
-            fetched = fetch_window(client, start, today)
+            fetched = smbs.fetch_window(client, start, today)
         except (httpx.HTTPError, smbs.ParseError) as exc:
             print(f"FATAL collection failed: {exc}", file=sys.stderr)
             return 1
         ecos_rows = fetch_ecos(client, start, today)
         jpy_rows = fetch_jpy(client, start, today)
+        reference_rows = reference.fetch(client, start, today)
 
         existing = read_rates(RATES_PATH)
         known = {row.fixing_date: row.rate for row in existing}
@@ -234,7 +227,16 @@ def main() -> int:
     jpy_merged = {**jpy, **dict(jpy_rows or [])}
     jpy_changed = jpy_merged != jpy
 
-    if changed == 0 and not newly_seen and not jpy_changed:
+    reference_changes = []
+    try:
+        references = read_reference_rates(REFERENCE_PATH)
+        reference_merged = {**references, **{(r.fixing_date, r.currency): r for r in reference_rows}}
+        reference_changes = [row for key, row in reference_merged.items() if references.get(key) != row]
+    except (OSError, ValueError, KeyError, TypeError, csv.Error) as exc:
+        # 빈 이력으로 대체해 덮어쓰지 않는다. 손상된 원본은 복구할 수 있게 남긴다.
+        print(f"WARN reference update skipped: {exc}", file=sys.stderr)
+
+    if changed == 0 and not newly_seen and not jpy_changed and not reference_changes:
         print(f"no change (latest fixing {latest.isoformat()})")
         return 0
 
@@ -245,13 +247,18 @@ def main() -> int:
         message = f"data(collect): rates through {latest.isoformat()}"
     elif newly_seen:
         message = f"data(collect): ecos seen through {max(newly_seen).isoformat()}"
-    else:
+    elif jpy_changed:
         message = f"data(collect): jpy through {max(jpy_merged).isoformat()}"
+    else:
+        message = f"data(collect): reference rates through {max(r.fixing_date for r in reference_changes).isoformat()}"
     if newly_seen:
         paths.append(str(ECOS_SEEN_PATH))
     if jpy_changed:
         write_jpy(JPY_PATH, jpy_merged)
         paths.append(str(JPY_PATH))
+    if reference_changes:
+        write_reference_rates(REFERENCE_PATH, reference_merged)
+        paths.append(str(REFERENCE_PATH))
 
     subprocess.run(["git", "add", *paths], cwd=REPO_ROOT, check=True)
     subprocess.run(["git", "commit", "-m", message], cwd=REPO_ROOT, check=True)
@@ -262,7 +269,8 @@ def main() -> int:
     subprocess.run(["git", "push"], cwd=REPO_ROOT, check=True)
     print(
         f"committed {changed} row(s), {len(newly_seen)} ecos first-seen, "
-        f"jpy {'updated' if jpy_changed else 'unchanged'}, latest fixing {latest.isoformat()}"
+        f"jpy {'updated' if jpy_changed else 'unchanged'}, "
+        f"references {'updated' if reference_changes else 'unchanged'}, latest fixing {latest.isoformat()}"
     )
     return 0
 

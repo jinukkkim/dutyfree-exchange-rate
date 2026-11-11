@@ -5,9 +5,29 @@ import {
   isTomorrowConfirmed,
   isTomorrowPending,
   latestYen,
+  latestConversions,
   nextDay,
   parseRates,
 } from "./rates"
+
+test("통화별 마지막 정상 환산값을 고르며 낡거나 미래인 통화는 숨긴다", () => {
+  const csv = `fix_date,currency,krw_per_unit,source
+2026-11-10,CNY,200.75,ecb
+2026-11-09,TWD,41.4,smbs
+2026-11-10,TWD,41.33,smbs
+2026-11-11,TWD,41,smbs
+2026-10-20,HKD,170,ecb
+2026-11-10,CNY,NaN,ecb
+2026-11-10,JPY,8.5,ecb
+2026-11-10,HKD,0,ecb
+2026-11-10,HKD,170,unknown
+`
+  expect(latestConversions(csv, "2026-11-10")).toEqual([
+    { currency: "CNY", fixingDate: "2026-11-10", krwPerUnit: 200.75, source: "ecb" },
+    { currency: "TWD", fixingDate: "2026-11-10", krwPerUnit: 41.33, source: "smbs" },
+  ])
+  expect(latestConversions("fix_date,currency,krw_per_unit,source\n", "2026-11-10")).toEqual([])
+})
 
 test("엔 레이트는 마지막 행을 쓰고, 깨졌거나 낡았으면 숨긴다", () => {
   const jpy = (...rows: string[]) => ["fix_date,krw_per_100_jpy", ...rows].join("\n")

@@ -12,8 +12,10 @@ import pytest
 from dfx import collect
 from dfx.store import (
     Row,
+    ReferenceRate,
     read_jpy,
     read_rates,
+    read_reference_rates,
     read_seen,
     write_jpy,
     write_rates,
@@ -37,6 +39,8 @@ def run(tmp_path, monkeypatch):
     jpy_path = tmp_path / "jpy.csv"
     write_jpy(jpy_path, {date(2026, 9, 18): 950.5})
     monkeypatch.setattr(collect, "JPY_PATH", jpy_path)
+    reference_path = tmp_path / "reference.csv"
+    monkeypatch.setattr(collect, "REFERENCE_PATH", reference_path)
     monkeypatch.setattr(collect, "today_kst", lambda: date(2026, 9, 21))
 
     log = {"cross_check": 0, "git": [], "cmds": []}
@@ -52,13 +56,20 @@ def run(tmp_path, monkeypatch):
 
     monkeypatch.setattr(collect.subprocess, "run", fake_run)
 
-    def go(fetched, ecos_rows=None, jpy_rows=None):
-        monkeypatch.setattr(collect, "fetch_window", lambda *a: fetched)
+    def go(fetched, ecos_rows=None, jpy_rows=None, reference_rows=(), reference_bytes=None):
+        if reference_bytes is not None:
+            reference_path.write_bytes(reference_bytes)
+        monkeypatch.setattr(collect.smbs, "fetch_window", lambda *a: fetched)
         monkeypatch.setattr(collect, "fetch_ecos", lambda *a: ecos_rows)
         monkeypatch.setattr(collect, "fetch_jpy", lambda *a: jpy_rows)
+        monkeypatch.setattr(collect.reference, "fetch", lambda *a: list(reference_rows))
         assert collect.main() == 0
         log["seen"] = read_seen(seen_path)
         log["jpy"] = read_jpy(jpy_path)
+        if reference_bytes is None:
+            log["reference"] = read_reference_rates(reference_path)
+        else:
+            log["reference_bytes"] = reference_path.read_bytes()
         log["rates"] = {row.fixing_date: row for row in read_rates(path)}
         return log
 
@@ -139,7 +150,7 @@ def test_jpy_unavailable_does_not_block_collection(run):
 def test_jpy_out_of_range_row_is_dropped_alone(monkeypatch, capsys):
     """이상치 한 행이 같은 응답의 정상 행까지 막으면, 그 행이 10일 창에서 빠질 때까지 엔 값이 멈춘다."""
     rows = [(date(2026, 9, 18), 9.505), (date(2026, 9, 21), 948.2)]
-    monkeypatch.setattr(collect, "fetch_window", lambda *a: rows)
+    monkeypatch.setattr(collect.smbs, "fetch_window", lambda *a: rows)
     assert collect.fetch_jpy(None, date(2026, 9, 11), date(2026, 9, 21)) == [(date(2026, 9, 21), 948.2)]
     assert "jpy out of range" in capsys.readouterr().err
 
@@ -154,3 +165,73 @@ def test_rates_and_jpy_changed_together_are_one_commit(run, capsys):
     assert any(p.endswith("jpy.csv") for p in added)
     assert log["cmds"][1] == ["git", "commit", "-m", "data(collect): rates through 2026-09-21"]
     assert "jpy updated" in capsys.readouterr().out
+
+
+def test_reference_only_changes_are_committed_and_identical_retry_is_noop(run):
+    fetched = [(date(2026, 9, 17), 1368.3), (date(2026, 9, 18), 1380.3)]
+    row = ReferenceRate(date(2026, 9, 21), "CNY", 200.123456789, "ecb")
+    log = run(fetched, reference_rows=[row])
+    assert log["reference"] == {(row.fixing_date, "CNY"): row}
+    assert log["cmds"][0][2:] == [str(collect.REFERENCE_PATH)]
+    assert "reference rates through 2026-09-21" in log["cmds"][1][-1]
+    assert log["cross_check"] == 0
+    log["git"].clear()
+    run(fetched, reference_rows=[row])
+    assert log["git"] == []
+
+
+def test_partial_reference_update_preserves_other_currencies(run):
+    fetched = [(date(2026, 9, 17), 1368.3), (date(2026, 9, 18), 1380.3)]
+    cny = ReferenceRate(date(2026, 9, 18), "CNY", 200, "ecb")
+    twd = ReferenceRate(date(2026, 9, 18), "TWD", 40, "smbs")
+    run(fetched, reference_rows=[cny, twd])
+    corrected = cny._replace(krw_per_unit=201)
+    log = run(fetched, reference_rows=[corrected])
+    assert log["reference"] == {(cny.fixing_date, "CNY"): corrected, (twd.fixing_date, "TWD"): twd}
+
+
+@pytest.mark.parametrize("correcting", [False, True])
+def test_reference_commit_date_comes_from_changed_rows_only(run, correcting):
+    fetched = [(date(2026, 9, 17), 1368.3), (date(2026, 9, 18), 1380.3)]
+    older = ReferenceRate(date(2026, 9, 17), "CNY", 200, "ecb")
+    latest = ReferenceRate(date(2026, 9, 21), "HKD", 180, "ecb")
+    run(fetched, reference_rows=([older] if correcting else []) + [latest])
+    revised = older._replace(krw_per_unit=201)
+    log = run(fetched, reference_rows=[revised, latest])
+    assert log["cmds"][-3] == ["git", "commit", "-m", "data(collect): reference rates through 2026-09-17"]
+    assert log["reference"][older.fixing_date, "CNY"] == revised
+
+
+@pytest.mark.parametrize("new_usd", [False, True])
+@pytest.mark.parametrize("broken", [
+    b"fix_date,currency,krw_per_unit,source\nbad-date,CNY,200,ecb\n",
+    b"fix_date,currency,krw_per_unit,source\n2026-09-18,CNY,bad-rate,ecb\n",
+    b"fix_date,currency,krw_per_unit,source\n2026-09-18,CNY\n",
+    b"wrong-header\nbroken-row\n",
+    b"\xff\xfe\x00",
+])
+def test_corrupt_reference_csv_is_preserved_without_blocking_usd(run, capsys, broken, new_usd):
+    fetched = [(date(2026, 9, 17), 1368.3), (date(2026, 9, 18), 1380.3)]
+    if new_usd:
+        fetched.append((date(2026, 9, 21), 1383.8))
+    log = run(fetched, reference_bytes=broken, reference_rows=[
+        ReferenceRate(date(2026, 9, 21), "CNY", 200, "ecb"),
+    ])
+    assert log["reference_bytes"] == broken
+    assert "WARN reference update skipped" in capsys.readouterr().err
+    if new_usd:
+        assert log["rates"][date(2026, 9, 21)].rate == 1383.8
+        assert log["git"] == ["add", "commit", "pull", "push"]
+        assert not any(p.endswith("reference.csv") for p in log["cmds"][0][2:])
+    else:
+        assert log["git"] == []
+
+
+def test_reference_read_io_error_does_not_block_usd(run, monkeypatch, capsys):
+    def denied(_path):
+        raise PermissionError("reference access denied")
+    monkeypatch.setattr(collect, "read_reference_rates", denied)
+    log = run([(date(2026, 9, 18), 1380.3), (date(2026, 9, 21), 1383.8)])
+    assert log["rates"][date(2026, 9, 21)].rate == 1383.8
+    assert log["git"] == ["add", "commit", "pull", "push"]
+    assert "WARN reference update skipped" in capsys.readouterr().err

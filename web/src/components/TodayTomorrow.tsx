@@ -9,7 +9,7 @@ import {
   nextDay,
   tomorrowValidThrough,
   type Rate,
-  type Yen,
+  type Conversion,
 } from "../lib/rates"
 
 const APP_STORE_URL = "https://apps.apple.com/kr/app/id6829470220"
@@ -21,12 +21,12 @@ export default function TodayTomorrow({
   rates,
   today,
   lang = "ko",
-  yen = null,
+  conversions = [],
 }: {
   rates: Rate[]
   today: string
   lang?: Lang
-  yen?: Yen | null
+  conversions?: Conversion[]
 }) {
   const en = lang === "en"
   const t = pick(lang)
@@ -67,22 +67,34 @@ export default function TodayTomorrow({
         `${day(latestFixing)} 이후 고시가 확인되지 않습니다`,
         `No rate confirmed since ${day(latestFixing)}`,
         `${day(latestFixing)}以降、レートが確認できません`,
+        `${day(latestFixing)}之后未确认到新的公布汇率`,
+        `${day(latestFixing)}之後未確認到新的公布匯率`,
       )
-    : t("고시가 확인되지 않습니다", "No rate confirmed", "レートが確認できません")
+    : t("고시가 확인되지 않습니다", "No rate confirmed", "レートが確認できません", "未确认到公布汇率", "未確認到公布匯率")
 
   if (!todayRate) return null
 
   const delta = tomorrowRate ? tomorrowRate.rate - todayRate.rate : null
   const pending = isTomorrowPending(rates, today)
 
-  /* 원이 와닿지 않는 일본인을 위해 1달러가 몇 엔인지 숫자 아래에 적는다 (/ja 만).
-     두 숫자에 같은 엔 레이트를 곱해야 엔 값의 차이가 곧 면세 환율의 차이가 된다.
-     어느 날 레이트인지와 수수료 제외는 푸터가 말한다.
-     대기 안내 줄과 같은 자리라 흐름에서 빼고, 아래 자리는 pb-7 이 비운다. */
-  const yenLine = (krw: number) =>
-    yen && (
-      <div className="absolute left-1/2 mt-2 -translate-x-1/2 whitespace-nowrap text-[13px] tabular-nums text-muted sm:text-[14px]">
-        {`約${((krw * 100) / yen.krwPer100).toFixed(1)}円`}
+  /* 환산 줄의 폭은 열 너비에 포함한다. 높이는 pb-7로 확보해 숫자 위치를 유지한다.
+     두 숫자를 같은 참고환율로 나누며 기준일·출처·수수료 제외는 푸터에 적는다. */
+  const conversionLine = (krw: number) =>
+    conversions.length > 0 && (
+      <div className="h-0">
+        <div className={`whitespace-nowrap pt-2 tabular-nums text-muted sm:text-[14px] ${conversions.length > 1 ? "text-[12px]" : "text-[13px]"}`}>
+          {lang === "zh-Hant" && "約"}
+          {conversions.map((conversion) => {
+            const decimals = conversion.currency === "CNY" || conversion.currency === "HKD" ? 2 : 1
+            const amount = (krw / conversion.krwPerUnit).toFixed(decimals)
+            return {
+              JPY: `約${amount}円`,
+              CNY: `约人民币${amount}元`,
+              TWD: `NT$${amount}`,
+              HKD: `HK$${amount}`,
+            }[conversion.currency]
+          }).join(" · ")}
+        </div>
       </div>
     )
 
@@ -94,12 +106,16 @@ export default function TodayTomorrow({
         `내일 환율은 ${day(validThrough)}까지 적용됩니다`,
         `Tomorrow's rate applies through ${day(validThrough)}`,
         `明日のレートは${day(validThrough)}まで適用されます`,
+        `明天的汇率适用至${day(validThrough)}`,
+        `明天的匯率適用至${day(validThrough)}`,
       )
     : carried &&
       t(
         `내일까지 ${day(carried.fixingDate)} 고시 환율이 적용됩니다`,
         `The rate published on ${day(carried.fixingDate)} applies through tomorrow`,
         `明日までは${day(carried.fixingDate)}公表のレートが適用されます`,
+        `截至明天仍适用${day(carried.fixingDate)}公布的汇率`,
+        `截至明天仍適用${day(carried.fixingDate)}公布的匯率`,
       )
 
   return (
@@ -110,12 +126,10 @@ export default function TodayTomorrow({
       {lang !== "ko" && (
         <p className="absolute inset-x-6 top-0 flex h-14 items-center justify-center text-[13px] leading-snug text-muted sm:h-20 sm:text-[14px]">
           <span>
-            {en ? "KRW per 1 USD · Korea time" : "1ドルあたりのウォン · 韓国時間"}
+            {t("", "KRW per 1 USD · Korea time", "1ドルあたりのウォン · 韓国時間", "每1美元兑换韩元 · 韩国时间", "每1美元兌換韓元 · 韓國時間")}
             <span className="hidden sm:inline"> · </span>
             <br className="sm:hidden" />
-            {en
-              ? "Same rate at Lotte, Shilla, Shinsegae and Hyundai"
-              : "ロッテ・新羅・新世界・現代で共通のレート"}
+            {t("", "Same rate at Lotte, Shilla, Shinsegae and Hyundai", "ロッテ・新羅・新世界・現代で共通のレート", "乐天、新罗、新世界、现代免税店统一适用", "樂天、新羅、新世界、現代免稅店統一適用")}
           </span>
         </p>
       )}
@@ -123,17 +137,17 @@ export default function TodayTomorrow({
       {/* 대기 안내 줄은 흐름 밖이라 아래 링크와 겹치지 않게 자리를 따로 비운다. */}
       <div
         className={`mx-auto flex max-w-page items-center justify-center gap-4 sm:gap-10 ${
-          pending || yen ? "pb-7" : ""
+          pending || conversions.length ? "pb-7" : ""
         }`}
       >
         <div className="relative">
           <div className="text-[15px] tracking-[-0.01em] text-muted sm:text-[17px]">
-            {dayHeading(t("오늘", "Today", "今日"), today)}
+            {dayHeading(t("오늘", "Today", "今日", "今天", "今天"), today)}
           </div>
           <div className={BIG_NUMBER}>
             {formatRate(todayRate.rate)}
           </div>
-          {yenLine(todayRate.rate)}
+          {conversionLine(todayRate.rate)}
         </div>
 
         {/* 화살표는 오늘에서 내일로 간다는 표시일 뿐이라 한 색으로 두고,
@@ -179,14 +193,14 @@ export default function TodayTomorrow({
 
         <div className="relative">
           <div className="text-[15px] tracking-[-0.01em] text-muted sm:text-[17px]">
-            {dayHeading(t("내일", "Tomorrow", "明日"), nextDay(today))}
+            {dayHeading(t("내일", "Tomorrow", "明日", "明天", "明天"), nextDay(today))}
           </div>
           {tomorrowRate ? (
             <>
               <div className={BIG_NUMBER}>
                 {formatRate(tomorrowRate.rate)}
               </div>
-              {yenLine(tomorrowRate.rate)}
+              {conversionLine(tomorrowRate.rate)}
             </>
           ) : stale ? (
             <div className="mt-4 text-[15px] text-muted sm:text-[17px]">
@@ -196,15 +210,17 @@ export default function TodayTomorrow({
             /* 정상 대기다. 숫자 자리를 같은 크기로 채워야 칸이 깨진 게 아니라
                비어 있는 것으로 읽힌다. 고시 시각은 본문 대신 ⓘ 가 말한다. */
             <>
-              <div className={`${BIG_NUMBER} text-muted`}>{t("고시 전", "Pending", "公表前")}</div>
+              <div className={`${BIG_NUMBER} text-muted`}>{t("고시 전", "Pending", "公表前", "待公布", "待公布")}</div>
               {/* 흐름에서 빼야 칸 높이가 오늘 칸과 같아져 두 제목이 나란히 선다. */}
               <div className="absolute left-1/2 mt-2 -translate-x-1/2 whitespace-nowrap text-[13px] text-muted sm:text-[14px]">
-                {t("오늘 고시 후 공개됩니다", "Not published yet", "本日の公表後に表示されます")}
-                <InfoTip label={t("고시 시각 안내", "About the publication time", "公表時刻について")}>
+                {t("오늘 고시 후 공개됩니다", "Not published yet", "本日の公表後に表示されます", "今日汇率公布后显示", "今日匯率公布後顯示")}
+                <InfoTip label={t("고시 시각 안내", "About the publication time", "公表時刻について", "汇率公布时间说明", "匯率公布時間說明")}>
                   {t(
                     "매매기준율의 공식 고시 시각은 영업일 오전 8시이지만, 대부분 그보다 일찍 공개되어 이 사이트에는 보통 새벽 중에 반영됩니다.",
                     "The official rate is published at 8:00 a.m. Korea time on business days. It usually appears earlier, so this site is typically updated before dawn.",
                     "基準レートの公式な公表時刻は営業日の韓国時間午前8時ですが、多くの場合それより早く公開されるため、このサイトには通常、早朝のうちに反映されます。",
+                    "基准汇率的正式公布时间为韩国营业日上午8点，但通常会提前公开，因此本站一般在凌晨更新。",
+                    "基準匯率的正式公布時間為韓國營業日上午8點，但通常會提前公開，因此本站一般在凌晨更新。",
                   )}
                 </InfoTip>
               </div>
@@ -216,19 +232,21 @@ export default function TodayTomorrow({
       {periodNote && (
         <p className="mt-4 text-[13px] text-muted sm:text-[14px]">
           {periodNote}
-          <InfoTip label={t("주말·공휴일 환율 안내", "About weekends and holidays", "週末・祝日のレートについて")}>
+          <InfoTip label={t("주말·공휴일 환율 안내", "About weekends and holidays", "週末・祝日のレートについて", "周末及节假日汇率说明", "週末及國定假日匯率說明")}>
             {t(
               "주말과 공휴일에는 환율이 새로 고시되지 않아, 직전 영업일에 고시된 환율이 다음 고시일까지 그대로 적용됩니다.",
               "No new rate is published on weekends and holidays, so the last published rate stays in effect until the next one.",
               "週末と祝日は新しいレートが公表されないため、直前の営業日に公表されたレートが次の公表日までそのまま適用されます。",
+              "韩国周末及法定节假日不公布新汇率，因此最近一个营业日公布的汇率会沿用至下次公布日。",
+              "韓國週末及國定假日不公布新匯率，因此最近一個營業日公布的匯率會沿用至下次公布日。",
             )}
           </InfoTip>
         </p>
       )}
 
       <p className="mt-7 text-[17px]">
-        <a href={t("/guide", "/en/guide", "/ja/guide")} className="text-link hover:underline">
-          {t("환율이 정해지는 방식 알아보기 ›", "How this rate is set ›", "レートの決まり方 ›")}
+        <a href={t("/guide", "/en/guide", "/ja/guide", "/zh-Hans/guide", "/zh-Hant/guide")} className="text-link hover:underline">
+          {t("환율이 정해지는 방식 알아보기 ›", "How this rate is set ›", "レートの決まり方 ›", "了解汇率如何确定 ›", "了解匯率如何決定 ›")}
         </a>
       </p>
 

@@ -98,6 +98,34 @@ def write_rates(path: Path, rows: list[Row]) -> None:
 JPY_HEADER = ["fix_date", "krw_per_100_jpy"]
 
 
+class ReferenceRate(NamedTuple):
+    fixing_date: date
+    currency: str
+    krw_per_unit: float
+    source: str
+
+
+def read_reference_rates(path: Path) -> dict[tuple[date, str], ReferenceRate]:
+    if not path.exists():
+        return {}
+    with path.open(newline="", encoding="utf-8") as handle:
+        rows = [
+            ReferenceRate(date.fromisoformat(r["fix_date"]), r["currency"], float(r["krw_per_unit"]), r["source"])
+            for r in csv.DictReader(handle)
+        ]
+    return {(r.fixing_date, r.currency): r for r in rows}
+
+
+def write_reference_rates(path: Path, rates: dict[tuple[date, str], ReferenceRate]) -> None:
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.writer(handle, lineterminator="\n")
+        writer.writerow(["fix_date", "currency", "krw_per_unit", "source"])
+        for key in sorted(rates):
+            row = rates[key]
+            # ECB 교차환율은 나눗셈 결과다. 정밀도를 줄이면 재조회할 때마다 변경으로 잡힌다.
+            writer.writerow([row.fixing_date.isoformat(), row.currency, repr(row.krw_per_unit), row.source])
+
+
 def read_jpy(path: Path) -> dict[date, float]:
     if not path.exists():
         return {}

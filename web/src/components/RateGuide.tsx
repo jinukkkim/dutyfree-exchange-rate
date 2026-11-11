@@ -285,6 +285,99 @@ $100 × 1,400.00 = ₩140,000`}
   )
 }
 
+/** 중국어 안내도 일본어판처럼 관광객에게 필요한 다섯 주제로 구성한다. */
+export function RateGuideZh({ lang }: { lang: "zh-Hans" | "zh-Hant" }) {
+  const t = (simplified: string, traditional: string) => lang === "zh-Hans" ? simplified : traditional
+  return (
+    <article className="px-4 pb-16 pt-10 text-slate-700">
+      <p className="text-sm">
+        <a href={`/${lang}`} className="text-slate-500 underline underline-offset-2">
+          {t("← 返回今日汇率", "← 返回今日匯率")}
+        </a>
+      </p>
+
+      <h1 className="mt-6 text-3xl font-bold tracking-tight text-slate-900">
+        {t("韩国免税店使用哪种汇率？", "韓國免稅店使用哪種匯率？")}
+      </h1>
+      <p className="mt-4 leading-relaxed">
+        {t(
+          "韩国免税店使用的汇率与汇率应用或新闻中的实时汇率不同。免税店采用的汇率由相关规定统一确定。",
+          "韓國免稅店使用的匯率與匯率 App 或新聞中的即時匯率不同。免稅店採用的匯率由相關規定統一決定。",
+        )}
+      </p>
+
+      <Section title={t("依规定统一适用的汇率", "依規定統一適用的匯率")}>
+        <p>
+          {t(
+            "免税店必须使用销售日之前最近一个公布日的基准汇率。首尔外汇经纪（Seoul Money Brokerage Services，SMBS）在韩国每个营业日上午8点公布一次基准汇率。免税店的适用汇率全天固定，乐天、新罗、新世界、现代免税店均使用相同汇率。",
+            "免稅店必須使用銷售日之前最近一個公布日的基準匯率。首爾外匯經紀（Seoul Money Brokerage Services，SMBS）在韓國每個營業日上午8點公布一次基準匯率。免稅店的適用匯率全天固定，樂天、新羅、新世界、現代免稅店均使用相同匯率。",
+          )}
+        </p>
+      </Section>
+
+      <Section title={t("美元标价如何换算为韩元", "美元標價如何換算為韓元")}>
+        <p>
+          {t(
+            "韩国免税店以美元定价。美元价格乘以适用汇率，就是韩元金额。本网站显示的是每1美元对应的韩元数。",
+            "韓國免稅店以美元定價。美元價格乘以適用匯率，就是韓元金額。本網站顯示的是每1美元對應的韓元數。",
+          )}
+        </p>
+        <pre className="mt-3 overflow-x-auto rounded bg-slate-50 p-4 text-xs leading-relaxed text-slate-600">
+          {`${t("以汇率 1,400.00 为例", "以匯率 1,400.00 為例")}\n$100 × 1,400.00 = ₩140,000`}
+        </pre>
+      </Section>
+
+      <Section title={t("刷卡时留意结算币种", "刷卡時留意結帳幣別")}>
+        <p>
+          {t(
+            "如果刷卡终端或店员询问是否将韩元金额转换为您本国的货币，这可能是动态货币转换（DCC）服务。该服务由商户端进行换算，通常会增加费用。根据 Visa 的出境旅行建议，可拒绝这项转换，选择以当地货币韩元（KRW）支付。",
+            "如果刷卡機或店員詢問是否將韓元金額轉換為您本國的貨幣，這可能是動態貨幣轉換（DCC）服務。該服務由商家端進行換算，通常會增加費用。根據 Visa 的海外旅遊建議，可拒絕這項轉換，選擇以當地貨幣韓元（KRW）支付。",
+          )}
+        </p>
+        <p className="mt-3">
+          {t(
+            "以韩元支付时，最终入账金额仍取决于银行卡组织、发卡银行的换算汇率及相关手续费，请查看所持卡片的条款。此处说明的是银行卡的 DCC 服务；电子钱包等支付方式请以结算页面显示的汇率和费用为准。",
+            "以韓元支付時，最終入帳金額仍取決於卡組織、發卡銀行的換算匯率及相關手續費，請查看所持卡片的條款。此處說明的是銀行卡的 DCC 服務；電子錢包等付款方式請以結帳頁面顯示的匯率和費用為準。",
+          )}
+        </p>
+      </Section>
+
+      <Section title={t("为什么已经知道明天的汇率", "為什麼已經知道明天的匯率")}>
+        <p>
+          {t(
+            "今天早上公布的基准汇率，将成为明天免税店的适用汇率。因此，本站显示的明天汇率是已经公布并确定的数值，而非预测。后天的汇率则要等到下一次公布后才能确定。",
+            "今天早上公布的基準匯率，將成為明天免稅店的適用匯率。因此，本站顯示的明天匯率是已經公布並確定的數值，而非預測。後天的匯率則要等到下一次公布後才能確定。",
+          )}
+        </p>
+      </Section>
+
+      <Section title={t("周末及韩国节假日", "週末及韓國國定假日")}>
+        <p>
+          {t(
+            "韩国周末及法定节假日不公布新汇率，因此沿用最近一次公布的汇率。例如，在没有其他节假日的情况下，周五早上公布的汇率适用于周六、周日和周一。本站日期及时间均以韩国时间为准。",
+            "韓國週末及國定假日不公布新匯率，因此沿用最近一次公布的匯率。例如，在沒有其他假日的情況下，週五早上公布的匯率適用於週六、週日和週一。本站日期及時間均以韓國時間為準。",
+          )}
+        </p>
+      </Section>
+
+      <p className="mt-10 border-t pt-4 text-xs leading-relaxed text-slate-400">
+        {t(
+          "依据：韩国《外汇交易规定》第1-2条(7) · 《保税销售场所运营告示》第3条第4款 · 首尔外汇经纪基准汇率。刷卡说明参考：",
+          "依據：韓國《外匯交易規定》第1-2條(7) · 《保稅銷售場所營運告示》第3條第4項 · 首爾外匯經紀基準匯率。刷卡說明參考：",
+        )}
+        <a
+          href={t("https://www.visa.cn/support/consumer/travel-support.html", "https://www.visa.com.tw/support/consumer/travel-support.html")}
+          className="underline underline-offset-2"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {t("Visa 旅行支持", "Visa 旅遊協助")}
+        </a>
+      </p>
+    </article>
+  )
+}
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-10">

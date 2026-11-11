@@ -22,3 +22,8 @@ test("영어 날짜도 한국 날짜 그대로 월·일·요일을 쓴다", () =
 test("일본어 날짜는 한국어와 같은 꼴에 일본어 요일을 쓴다", () => {
   expect(formatDayLabel("2026-11-10", "ja")).toBe("11/10(火)")
 })
+
+test.each(["zh-Hans", "zh-Hant"] as const)("%s 날짜는 중국어 요일을 쓴다", (lang) => {
+  expect(formatDayLabel("2026-11-10", lang)).toBe("11/10(二)")
+  expect(formatDayLabel("2026-11-15", lang)).toBe("11/15(日)")
+})
