@@ -66,12 +66,41 @@ test("일본어판은 단위를 밝히고 일본어 가이드로 보내며 오�
 })
 
 test("일본어판은 두 숫자를 같은 엔 레이트로 환산해 아래에 적는다", () => {
-  const yen = { fixingDate: "2026-09-17", krwPer100: 950 }
-  render(<TodayTomorrow rates={parseRates(CSV)} today="2026-09-17" lang="ja" yen={yen} />)
+  const conversions = [{ currency: "JPY", fixingDate: "2026-09-17", krwPerUnit: 9.5, source: "smbs" }] as const
+  render(<TodayTomorrow rates={parseRates(CSV)} today="2026-09-17" lang="ja" conversions={[...conversions]} />)
 
   // 1,353.30 / 9.50 = 142.45…, 1,368.30 / 9.50 = 144.03…
   expect(screen.getByText("約142.5円")).toBeInTheDocument()
   expect(screen.getByText("約144.0円")).toBeInTheDocument()
+})
+
+test("간체는 오늘·내일을 같은 CNY 환율로 환산한다", () => {
+  render(<TodayTomorrow rates={parseRates(CSV)} today="2026-09-17" lang="zh-Hans" conversions={[
+    { currency: "CNY", fixingDate: "2026-09-17", krwPerUnit: 190, source: "ecb" },
+  ]} />)
+  expect(screen.getByText("约人民币7.1元")).toBeInTheDocument()
+  expect(screen.getByText("约人民币7.2元")).toBeInTheDocument()
+})
+
+test("번체는 TWD·HKD 환산액을 가운뎃점으로 이어 한 줄로 표시한다", () => {
+  render(<TodayTomorrow rates={parseRates(CSV)} today="2026-09-17" lang="zh-Hant" conversions={[
+    { currency: "TWD", fixingDate: "2026-09-17", krwPerUnit: 40, source: "smbs" },
+    { currency: "HKD", fixingDate: "2026-09-16", krwPerUnit: 160, source: "ecb" },
+  ]} />)
+  const today = screen.getByText("約NT$33.8 · HK$8.5")
+  expect(today).toHaveClass("whitespace-nowrap")
+  expect(screen.getByText("約NT$34.2 · HK$8.6")).toBeInTheDocument()
+  expect(today.parentElement?.parentElement).toHaveClass("pb-7")
+})
+
+test("번체의 한 통화가 없으면 다른 통화를 표시하고 고시 전 숫자는 환산하지 않는다", () => {
+  render(<TodayTomorrow rates={parseRates(CSV).slice(0, 1)} today="2026-09-17" lang="zh-Hant" conversions={[
+    { currency: "HKD", fixingDate: "2026-09-16", krwPerUnit: 160, source: "ecb" },
+  ]} />)
+  expect(screen.getByText("待公布")).toBeInTheDocument()
+  expect(screen.getAllByText(/^約HK\$/)).toHaveLength(1)
+  expect(screen.queryByText(/NT\$/)).not.toBeInTheDocument()
+  expect(screen.getByText("約HK$8.5").parentElement?.parentElement).toHaveClass("pb-7")
 })
 
 function withUserAgent(ua: string, run: () => void) {

@@ -45,7 +45,7 @@ export function searchDescription(rates: Rate[], lang: Lang = "ko"): string {
   const from = nextDay(latest.fixingDate)
   const through = nextFixingDate(latest.fixingDate)
   const period =
-    through && through > from ? `${day(from)}${t("~", " - ", "〜")}${day(through)}` : day(from)
+    through && through > from ? `${day(from)}${t("~", " - ", "〜", "至", "至")}${day(through)}` : day(from)
 
   const current = appliedOn(rates, latest.fixingDate)
   let comparison = ""
@@ -57,11 +57,19 @@ export function searchDescription(rates: Rate[], lang: Lang = "ko"): string {
     const up = delta > 0
     comparison =
       delta === 0
-        ? t(`, ${was} ${before}원에서 변동 없음`, `, unchanged from ${before} on ${was}`, `、${was}の${before}ウォンから変動なし`)
+        ? t(
+            `, ${was} ${before}원에서 변동 없음`,
+            `, unchanged from ${before} on ${was}`,
+            `、${was}の${before}ウォンから変動なし`,
+            `，与${was}的${before}韩元持平`,
+            `，與${was}的${before}韓元持平`,
+          )
         : t(
             `, ${was} ${before}원보다 ${change}원 ${up ? "오름" : "내림"}`,
             `, ${up ? "up" : "down"} ${change} from ${before} on ${was}`,
             `、${was}の${before}ウォンから${change}ウォン${up ? "上昇" : "下落"}`,
+            `，比${was}的${before}韩元${up ? "上涨" : "下降"}${change}韩元`,
+            `，比${was}的${before}韓元${up ? "上漲" : "下降"}${change}韓元`,
           )
   }
 
@@ -71,6 +79,8 @@ export function searchDescription(rates: Rate[], lang: Lang = "ko"): string {
     `오늘·내일 면세점 환율. ${period} 1달러 ${rate}원${comparison}. ${fixed} 고시로 확정.`,
     `Korea duty free exchange rate. ${period} 1 USD = ${rate} KRW${comparison}. Published ${fixed}.`,
     `韓国免税店の為替レート。${period} 1ドル = ${rate}ウォン${comparison}。${fixed}公表。`,
+    `韩国免税店汇率。${period} 1美元 = ${rate}韩元${comparison}。${fixed}公布。`,
+    `韓國免稅店匯率。${period} 1美元 = ${rate}韓元${comparison}。${fixed}公布。`,
   )
 }
 

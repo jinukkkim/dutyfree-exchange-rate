@@ -47,7 +47,7 @@ function ogPreview(): Plugin {
 }
 
 /**
- * /guide·/en·/ja 와 그 /guide 전용 HTML. 앱은 한 장짜리라 이 주소들도 index.html 을
+ * /guide·외국어 홈과 그 /guide 전용 HTML. 앱은 한 장짜리라 이 주소들도 index.html 을
  * 받는데, 그러면 검색 결과에서 홈과 제목·설명이 같아 구분이 안 된다 (네이버 CTR 0.3%).
  * 크롤러는 JS 로 바꾼 제목을 읽지 않으니 빌드 결과를 복사해 제목·설명과,
  * 구글이 홈의 중복으로 묶지 않도록 canonical·hreflang·크롤러용 본문 문장을 바꾼다.
@@ -70,6 +70,8 @@ const JA_GUIDE_DESCRIPTION =
 const FOREIGN = {
   en: { locale: "en_US", og: "See the exchange rate Korean duty free shops apply today and tomorrow." },
   ja: { locale: "ja_JP", og: "韓国の免税店で今日と明日に適用される為替レートを確認できます。" },
+  "zh-Hans": { locale: "zh_CN", og: "查看韩国免税店今天和明天适用的汇率。" },
+  "zh-Hant": { locale: "zh_TW", og: "查看韓國免稅店今天和明天適用的匯率。" },
 } as const
 
 const GUIDE_TITLE = "면세점 환율 적용 기준 - 매매기준율·적용환율·기준환율 차이"
@@ -80,8 +82,8 @@ const GUIDE_DESCRIPTION =
 type StaticPage = { file: string; path: string; title: string; description: string }
 
 function renderStaticPage(html: string, page: StaticPage): string {
-  const lang = page.path.match(/^\/(en|ja)(?=\/|$)/)?.[1] as keyof typeof FOREIGN | undefined
-  const koPath = page.path.replace(/^\/(en|ja)/, "") || "/"
+  const lang = page.path.match(/^\/(en|ja|zh-Hans|zh-Hant)(?=\/|$)/)?.[1] as keyof typeof FOREIGN | undefined
+  const koPath = page.path.replace(/^\/(en|ja|zh-Hans|zh-Hant)(?=\/|$)/, "") || "/"
   const localized = (code: string) => ORIGIN + (koPath === "/" ? `/${code}` : `/${code}${koPath}`)
   const edits: [RegExp, string][] = [
     [/(<title>)[^<]*/, page.title],
@@ -90,6 +92,8 @@ function renderStaticPage(html: string, page: StaticPage): string {
     [/(<link\s+rel="alternate"\s+hreflang="ko"\s+href=")[^"]*/, ORIGIN + koPath],
     [/(<link\s+rel="alternate"\s+hreflang="en"\s+href=")[^"]*/, localized("en")],
     [/(<link\s+rel="alternate"\s+hreflang="ja"\s+href=")[^"]*/, localized("ja")],
+    [/(<link\s+rel="alternate"\s+hreflang="zh-Hans"\s+href=")[^"]*/, localized("zh-Hans")],
+    [/(<link\s+rel="alternate"\s+hreflang="zh-Hant"\s+href=")[^"]*/, localized("zh-Hant")],
     [/(<link\s+rel="alternate"\s+hreflang="x-default"\s+href=")[^"]*/, localized("en")],
     [/(<div id="root">\s*<p[^>]*>)[^<]*/, page.description],
   ]
@@ -129,6 +133,10 @@ function staticPages(): Plugin {
         { file: "en-guide.html", path: "/en/guide", title: EN_GUIDE_TITLE, description: EN_GUIDE_DESCRIPTION },
         { file: "ja.html", path: "/ja", title: JA_TITLE, description: searchDescription(readRates(), "ja") },
         { file: "ja-guide.html", path: "/ja/guide", title: JA_GUIDE_TITLE, description: JA_GUIDE_DESCRIPTION },
+        { file: "zh-Hans.html", path: "/zh-Hans", title: "韩国免税店汇率 - 今天和明天", description: searchDescription(readRates(), "zh-Hans") },
+        { file: "zh-Hans-guide.html", path: "/zh-Hans/guide", title: "韩国免税店汇率如何确定", description: "韩国免税店以美元定价，并按前一个营业日公布的汇率换算为韩元。了解适用汇率、刷卡时的结算币种，以及为什么明天的汇率已经确定。" },
+        { file: "zh-Hant.html", path: "/zh-Hant", title: "韓國免稅店匯率 - 今天和明天", description: searchDescription(readRates(), "zh-Hant") },
+        { file: "zh-Hant-guide.html", path: "/zh-Hant/guide", title: "韓國免稅店匯率如何決定", description: "韓國免稅店以美元定價，並按前一個營業日公布的匯率換算為韓元。了解適用匯率、刷卡時的結帳幣別，以及為什麼明天的匯率已經確定。" },
       ]
       for (const page of pages) writeFileSync(join(outDir, page.file), renderStaticPage(html, page))
     },

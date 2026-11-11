@@ -29,6 +29,30 @@ export function parseRates(csv: string): Rate[] {
 /** /ja 의 엔 환산 참고값. data/jpy.csv 의 마지막 행 (원/100엔 재정환율). */
 export type Yen = { fixingDate: string; krwPer100: number }
 
+export type Conversion = {
+  currency: "JPY" | "CNY" | "TWD" | "HKD"
+  fixingDate: string
+  krwPerUnit: number
+  source: "smbs" | "ecb"
+}
+
+/** 중국어 참고환율은 통화별로 고른다. 한 통화 수집이 멈춰도 나머지는 표시한다. */
+export function latestConversions(csv: string, today: string): Conversion[] {
+  const latest = new Map<string, Conversion>()
+  for (const line of csv.trim().split("\n").slice(1)) {
+    const [fixingDate, currency, raw, source] = line.trim().split(",")
+    const krwPerUnit = Number(raw)
+    if (currency !== "CNY" && currency !== "TWD" && currency !== "HKD") continue
+    if (source !== "smbs" && source !== "ecb") continue
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fixingDate) || fixingDate > today || isStale(fixingDate, today)) continue
+    if (!Number.isFinite(krwPerUnit) || krwPerUnit <= 0) continue
+    if ((latest.get(currency)?.fixingDate ?? "") <= fixingDate) {
+      latest.set(currency, { currency, fixingDate, krwPerUnit, source })
+    }
+  }
+  return [...latest.values()]
+}
+
 export function latestYen(csv: string, today: string): Yen | null {
   const last = csv.trim().split("\n").slice(1).at(-1)
   if (!last) return null

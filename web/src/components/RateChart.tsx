@@ -4,11 +4,11 @@ import { formatDayLabel, formatRate, pick, type Lang } from "../lib/format"
 import { isTomorrowConfirmed, nextDay, type Rate } from "../lib/rates"
 
 const RANGES = [
-  { ko: "1개월", en: "1M", ja: "1か月", days: 30 },
-  { ko: "6개월", en: "6M", ja: "6か月", days: 182 },
-  { ko: "1년", en: "1Y", ja: "1年", days: 365 },
-  { ko: "5년", en: "5Y", ja: "5年", days: 1826 },
-  { ko: "전체", en: "All", ja: "全期間", days: Number.POSITIVE_INFINITY },
+  { ko: "1개월", en: "1M", ja: "1か月", "zh-Hans": "1个月", "zh-Hant": "1個月", days: 30 },
+  { ko: "6개월", en: "6M", ja: "6か月", "zh-Hans": "6个月", "zh-Hant": "6個月", days: 182 },
+  { ko: "1년", en: "1Y", ja: "1年", "zh-Hans": "1年", "zh-Hant": "1年", days: 365 },
+  { ko: "5년", en: "5Y", ja: "5年", "zh-Hans": "5年", "zh-Hant": "5年", days: 1826 },
+  { ko: "전체", en: "All", ja: "全期間", "zh-Hans": "全部", "zh-Hant": "全部", days: Number.POSITIVE_INFINITY },
 ] as const
 
 const DEFAULT_DAYS = 30
@@ -96,6 +96,8 @@ export default function RateChart({
             "이 구간에는 고시가 없습니다. 더 긴 구간을 선택해 주세요.",
             "No rates were published in this period. Please choose a longer one.",
             "この期間に公表されたレートはありません。より長い期間を選んでください。",
+            "此期间没有公布汇率，请选择更长的时间范围。",
+            "此期間沒有公布匯率，請選擇更長的時間範圍。",
           )}
         </p>
       </section>
@@ -162,6 +164,8 @@ export default function RateChart({
               `적용환율 추이, 최저 ${formatRate(min)} 최고 ${formatRate(max)}`,
               `Duty free rate history, low ${formatRate(min)}, high ${formatRate(max)}`,
               `免税店レートの推移、最低 ${formatRate(min)}、最高 ${formatRate(max)}`,
+              `免税店汇率走势，最低 ${formatRate(min)}，最高 ${formatRate(max)}`,
+              `免稅店匯率走勢，最低 ${formatRate(min)}，最高 ${formatRate(max)}`,
             )}
             onMouseMove={(event) => pointAt(event.clientX, event.currentTarget)}
             onMouseLeave={() => setHover(null)}
@@ -250,7 +254,7 @@ export default function RateChart({
                 textAnchor="middle"
                 className="fill-sub text-[10px]"
               >
-                {t("오늘", "Today", "今日")}
+                {t("오늘", "Today", "今日", "今天", "今天")}
               </text>
             )}
 
@@ -293,7 +297,7 @@ export default function RateChart({
               </span>
               <span className="text-[12px] text-muted">
                 {formatDayLabel(hovered.date, lang)}
-                {hovered.date > today ? t(" · 내일", " · Tomorrow", " · 明日") : ""}
+                {hovered.date > today ? t(" · 내일", " · Tomorrow", " · 明日", " · 明天", " · 明天") : ""}
               </span>
             </div>
           )}
@@ -316,7 +320,7 @@ function ChartHeader({
   return (
     <div className="mx-auto max-w-page">
       <h2 className="text-[24px] font-semibold tracking-[-0.02em] sm:text-[32px]">
-        {pick(lang)("적용환율 추이", "Rate History", "レート推移")}
+        {pick(lang)("적용환율 추이", "Rate History", "レート推移", "汇率走势", "匯率走勢")}
       </h2>
       <div className="mt-6 inline-flex flex-wrap justify-center gap-2">
         {RANGES.map((range) => (

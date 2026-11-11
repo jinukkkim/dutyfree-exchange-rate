@@ -352,3 +352,31 @@ curl로 접근 가능(메인 페이지 한정). 롯데·신라·현대는 미확
 | smbs XML 정밀도가 소스 원본인지, 차트용 반올림인지 | 3개 소스 교차로 0.1원 단위 일치 확인. 원본 확인은 미완 |
 | **2027-01-01 TWAP 전환** | 확정 사항(고시 제2026-88호 부칙). 시계열 단절 표시 필요. 고시 시각(08:00)은 규정상 유지 전망. TWAP 추출 "세부 기준"은 미공개 |
 | 24시간 시장(2026-07~)이 고시 절차에 준 영향 | 미조사. D-1 매핑은 전환 후인 현재도 유효함을 실측 확인 |
+
+## 10. 중국어 안내의 카드 결제 통화 (2026-11-11 확인)
+
+- Visa [간체 여행 안내](https://www.visa.cn/support/consumer/travel-support.html)와
+  [번체 여행 안내](https://www.visa.com.tw/support/consumer/travel-support.html)는
+  DCC(현장에서 자국 통화로 환산) 시 추가 비용이 붙을 수 있어, 환산을 거절하고
+  현지 통화를 선택하도록 안내한다. 한국 현지 통화는 KRW다.
+- [Mastercard 중국어 FAQ](https://www.mastercard.com/cn/zh/personal/get-support/frequently-asked-questions.html)도
+  DCC 비용과 발급 은행의 환전 비용을 구분한다. 최종 청구 환율·수수료는 카드 약관에 따른다.
+- `/zh-Hans/guide`·`/zh-Hant/guide`의 결제 안내는 이 일반적인 카드 DCC 안내에 한정한다.
+  일본 카드 수수료 범위는 옮기지 않고, 문자 체계만으로 방문자의 자국 통화를 가정하지 않는다.
+  전자지갑의 환율·수수료나 면세점의 USD 직접 결제 유불리를 검증한 것은 아니다.
+
+## 11. 중국어판 환산 참고값 (2026-11-11 확인)
+
+- 사용자 요청에 따라 간체는 CNY, 번체는 TWD·HKD를 함께 표시한다. 원화 적용환율을
+  각 통화의 `1통화당 원화` 값으로 나누며, 오늘·내일 모두 같은 참고값을 쓴다.
+- CNY·HKD: [ECB 기준환율](https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html)의
+  [공식 일별 XML](https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml)을 받는다.
+  모두 EUR 기준이므로 `KRW/EUR ÷ CNY/EUR`, `KRW/EUR ÷ HKD/EUR`로 환산한다.
+  ECB가 공표한 날짜를 그대로 저장하며, 한국 영업일과 공표 일정이 다를 수 있다.
+- TWD: 기존 SMBS XML의 `TWD` 코드. 2026-11-11 응답의 1 TWD = 40.76 KRW 확인.
+- SMBS의 [CNY 고시 중단 안내](https://www.smbs.co.kr/ExRate/TodayExRate.jsp)에 따라
+  CNH를 CNY로 바꾸어 표기하지 않는다. ECB는 CNY(Chinese yuan renminbi)를 명시한다.
+- `data/reference.csv`에 날짜·통화·원화 환율·출처를 저장한다. 참고통화만 갱신돼도
+  기존 매시간 수집 작업이 커밋하고, 각 출처 장애는 다른 통화 수집을 막지 않는다.
+- 화면에서는 통화별로 낡거나 잘못된 값을 숨긴다. 푸터에 기준일·단위·출처와
+  카드사 환율 및 수수료 제외를 적는다. ECB도 참고용 데이터로 제공하며 실제 거래용 환율은 아니다.

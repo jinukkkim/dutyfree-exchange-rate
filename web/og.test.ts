@@ -21,6 +21,18 @@ test("금요일 고시는 토요일부터 적용된다고 쓴다", () => {
 
 const search = (...rows: string[]) => searchDescription(parseRates(csv(...rows)))
 
+test.each([
+  { lang: "zh-Hans", name: "韩国免税店汇率", unit: "韩元", published: "公布", down: "下降", flat: "持平" },
+  { lang: "zh-Hant", name: "韓國免稅店匯率", unit: "韓元", published: "公布", down: "下降", flat: "持平" },
+] as const)("$lang 검색 설명에 적용일·원화 환율·등락을 적는다", ({ lang, name, unit, published, down, flat }) => {
+  const description = (...rows: string[]) => searchDescription(parseRates(csv(...rows)), lang)
+  expect(description("2026-11-09,1357.9", "2026-11-10,1355.7")).toBe(
+    `${name}。11/11(三) 1美元 = 1,355.70${unit}，比11/10(二)的1,357.90${unit}${down}2.20${unit}。11/10${published}。`,
+  )
+  expect(description("2026-11-05,1340.7", "2026-11-06,1342")).toContain("11/7(六)至11/9(一)")
+  expect(description("2026-11-09,1357.9", "2026-11-10,1357.9")).toContain(flat)
+})
+
 test("영어 검색 설명도 날짜·환율·등락을 말한다", () => {
   const en = (...rows: string[]) => searchDescription(parseRates(csv(...rows)), "en")
   expect(en("2026-11-09,1357.9", "2026-11-10,1355.7")).toBe(
