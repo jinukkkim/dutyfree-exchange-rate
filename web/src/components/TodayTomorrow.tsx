@@ -77,21 +77,23 @@ export default function TodayTomorrow({
   const delta = tomorrowRate ? tomorrowRate.rate - todayRate.rate : null
   const pending = isTomorrowPending(rates, today)
 
-  /* 두 숫자를 같은 참고환율로 나눠야 차이가 면세 환율의 차이만 반영한다.
-     기준일·출처·수수료 제외는 푸터에 적고, 한 줄만큼 아래 공간을 비운다. */
+  /* 환산 줄의 폭은 열 너비에 포함한다. 높이는 pb-7로 확보해 숫자 위치를 유지한다.
+     두 숫자를 같은 참고환율로 나누며 기준일·출처·수수료 제외는 푸터에 적는다. */
   const conversionLine = (krw: number) =>
     conversions.length > 0 && (
-      <div className="absolute left-1/2 mt-2 -translate-x-1/2 whitespace-nowrap text-[13px] tabular-nums text-muted sm:text-[14px]">
-        {lang === "zh-Hant" && "約"}
-        {conversions.map((conversion) => {
-          const amount = (krw / conversion.krwPerUnit).toFixed(1)
-          return {
-            JPY: `約${amount}円`,
-            CNY: `约人民币${amount}元`,
-            TWD: `NT$${amount}`,
-            HKD: `HK$${amount}`,
-          }[conversion.currency]
-        }).join(" · ")}
+      <div className="h-0">
+        <div className={`whitespace-nowrap pt-2 tabular-nums text-muted sm:text-[14px] ${conversions.length > 1 ? "text-[12px]" : "text-[13px]"}`}>
+          {lang === "zh-Hant" && "約"}
+          {conversions.map((conversion) => {
+            const amount = (krw / conversion.krwPerUnit).toFixed(1)
+            return {
+              JPY: `約${amount}円`,
+              CNY: `约人民币${amount}元`,
+              TWD: `NT$${amount}`,
+              HKD: `HK$${amount}`,
+            }[conversion.currency]
+          }).join(" · ")}
+        </div>
       </div>
     )
 

@@ -89,8 +89,10 @@ test("번체는 TWD·HKD 환산액을 가운뎃점으로 이어 한 줄로 표�
   ]} />)
   const today = screen.getByText("約NT$33.8 · HK$8.5")
   expect(today).toHaveClass("whitespace-nowrap")
+  expect(today).not.toHaveClass("absolute")
+  expect(today).toHaveClass("text-[12px]")
   expect(screen.getByText("約NT$34.2 · HK$8.6")).toBeInTheDocument()
-  expect(today.parentElement?.parentElement).toHaveClass("pb-7")
+  expect(today.parentElement?.parentElement?.parentElement).toHaveClass("pb-7")
 })
 
 test("번체의 한 통화가 없으면 다른 통화를 표시하고 고시 전 숫자는 환산하지 않는다", () => {
@@ -100,7 +102,7 @@ test("번체의 한 통화가 없으면 다른 통화를 표시하고 고시 전
   expect(screen.getByText("待公布")).toBeInTheDocument()
   expect(screen.getAllByText(/^約HK\$/)).toHaveLength(1)
   expect(screen.queryByText(/NT\$/)).not.toBeInTheDocument()
-  expect(screen.getByText("約HK$8.5").parentElement?.parentElement).toHaveClass("pb-7")
+  expect(screen.getByText("約HK$8.5").parentElement?.parentElement?.parentElement).toHaveClass("pb-7")
 })
 
 function withUserAgent(ua: string, run: () => void) {
