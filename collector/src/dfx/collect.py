@@ -19,6 +19,7 @@
 과거 값이 정정되면 그때 드러난다.
 """
 
+import csv
 import os
 import subprocess
 import sys
@@ -226,9 +227,14 @@ def main() -> int:
     jpy_merged = {**jpy, **dict(jpy_rows or [])}
     jpy_changed = jpy_merged != jpy
 
-    references = read_reference_rates(REFERENCE_PATH)
-    reference_merged = {**references, **{(r.fixing_date, r.currency): r for r in reference_rows}}
-    reference_changes = [row for key, row in reference_merged.items() if references.get(key) != row]
+    reference_changes = []
+    try:
+        references = read_reference_rates(REFERENCE_PATH)
+        reference_merged = {**references, **{(r.fixing_date, r.currency): r for r in reference_rows}}
+        reference_changes = [row for key, row in reference_merged.items() if references.get(key) != row]
+    except (OSError, ValueError, KeyError, TypeError, csv.Error) as exc:
+        # 빈 이력으로 대체해 덮어쓰지 않는다. 손상된 원본은 복구할 수 있게 남긴다.
+        print(f"WARN reference update skipped: {exc}", file=sys.stderr)
 
     if changed == 0 and not newly_seen and not jpy_changed and not reference_changes:
         print(f"no change (latest fixing {latest.isoformat()})")

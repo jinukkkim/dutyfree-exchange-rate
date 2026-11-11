@@ -56,7 +56,9 @@ def run(tmp_path, monkeypatch):
 
     monkeypatch.setattr(collect.subprocess, "run", fake_run)
 
-    def go(fetched, ecos_rows=None, jpy_rows=None, reference_rows=()):
+    def go(fetched, ecos_rows=None, jpy_rows=None, reference_rows=(), reference_bytes=None):
+        if reference_bytes is not None:
+            reference_path.write_bytes(reference_bytes)
         monkeypatch.setattr(collect.smbs, "fetch_window", lambda *a: fetched)
         monkeypatch.setattr(collect, "fetch_ecos", lambda *a: ecos_rows)
         monkeypatch.setattr(collect, "fetch_jpy", lambda *a: jpy_rows)
@@ -64,7 +66,10 @@ def run(tmp_path, monkeypatch):
         assert collect.main() == 0
         log["seen"] = read_seen(seen_path)
         log["jpy"] = read_jpy(jpy_path)
-        log["reference"] = read_reference_rates(reference_path)
+        if reference_bytes is None:
+            log["reference"] = read_reference_rates(reference_path)
+        else:
+            log["reference_bytes"] = reference_path.read_bytes()
         log["rates"] = {row.fixing_date: row for row in read_rates(path)}
         return log
 
@@ -195,3 +200,38 @@ def test_reference_commit_date_comes_from_changed_rows_only(run, correcting):
     log = run(fetched, reference_rows=[revised, latest])
     assert log["cmds"][-3] == ["git", "commit", "-m", "data(collect): reference rates through 2026-09-17"]
     assert log["reference"][older.fixing_date, "CNY"] == revised
+
+
+@pytest.mark.parametrize("new_usd", [False, True])
+@pytest.mark.parametrize("broken", [
+    b"fix_date,currency,krw_per_unit,source\nbad-date,CNY,200,ecb\n",
+    b"fix_date,currency,krw_per_unit,source\n2026-09-18,CNY,bad-rate,ecb\n",
+    b"fix_date,currency,krw_per_unit,source\n2026-09-18,CNY\n",
+    b"wrong-header\nbroken-row\n",
+    b"\xff\xfe\x00",
+])
+def test_corrupt_reference_csv_is_preserved_without_blocking_usd(run, capsys, broken, new_usd):
+    fetched = [(date(2026, 9, 17), 1368.3), (date(2026, 9, 18), 1380.3)]
+    if new_usd:
+        fetched.append((date(2026, 9, 21), 1383.8))
+    log = run(fetched, reference_bytes=broken, reference_rows=[
+        ReferenceRate(date(2026, 9, 21), "CNY", 200, "ecb"),
+    ])
+    assert log["reference_bytes"] == broken
+    assert "WARN reference update skipped" in capsys.readouterr().err
+    if new_usd:
+        assert log["rates"][date(2026, 9, 21)].rate == 1383.8
+        assert log["git"] == ["add", "commit", "pull", "push"]
+        assert not any(p.endswith("reference.csv") for p in log["cmds"][0][2:])
+    else:
+        assert log["git"] == []
+
+
+def test_reference_read_io_error_does_not_block_usd(run, monkeypatch, capsys):
+    def denied(_path):
+        raise PermissionError("reference access denied")
+    monkeypatch.setattr(collect, "read_reference_rates", denied)
+    log = run([(date(2026, 9, 18), 1380.3), (date(2026, 9, 21), 1383.8)])
+    assert log["rates"][date(2026, 9, 21)].rate == 1383.8
+    assert log["git"] == ["add", "commit", "pull", "push"]
+    assert "WARN reference update skipped" in capsys.readouterr().err
