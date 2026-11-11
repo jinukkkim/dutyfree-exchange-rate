@@ -47,7 +47,7 @@
 
 ## Verification
 
-- `npm test`: 99 tests passed across 9 files, including lowercase Chinese routes, hosting aliases, currency conversions and middle-dot formatting.
+- `npm test`: 101 tests passed across 9 files, including lowercase Chinese routes, hosting aliases, currency conversions and middle-dot formatting.
 - Collector `.venv/bin/python -m pytest -q`: 82 tests passed after review fixes, including isolation of malformed reference CSV reads, unrelated/malformed currency quotes and dates, and changed-row commit dates. Live fetch returned CNY/HKD history for 64 publication days (2026-08-13–2026-11-10), plus 8 TWD rows. No local data or git writes during the live check.
 - `npm run build`: TypeScript and Vite passed.
 - Production artifact checks: all 10 pages passed rewrite ordering, language, canonical, reciprocal hreflang, description, Open Graph and sitemap checks.
@@ -87,3 +87,5 @@
 - [x] Use actual changed reference rows to choose the reference-only commit date, including historical additions and corrections.
 - [x] Serve lowercase Chinese home/guide aliases with the same static HTML and canonical metadata, and normalize their runtime language and internal links.
 - [x] Skip reference updates on CSV read/parse failure, preserving the damaged file while USD collection and commits continue; unchanged USD creates no spurious commit.
+
+- [x] Display CNY/HKD to two decimals and retain one decimal for JPY/TWD; test small differences that previously rounded to the same displayed amount.

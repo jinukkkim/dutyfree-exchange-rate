@@ -85,7 +85,8 @@ export default function TodayTomorrow({
         <div className={`whitespace-nowrap pt-2 tabular-nums text-muted sm:text-[14px] ${conversions.length > 1 ? "text-[12px]" : "text-[13px]"}`}>
           {lang === "zh-Hant" && "約"}
           {conversions.map((conversion) => {
-            const amount = (krw / conversion.krwPerUnit).toFixed(1)
+            const decimals = conversion.currency === "CNY" || conversion.currency === "HKD" ? 2 : 1
+            const amount = (krw / conversion.krwPerUnit).toFixed(decimals)
             return {
               JPY: `約${amount}円`,
               CNY: `约人民币${amount}元`,

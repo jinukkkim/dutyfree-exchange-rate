@@ -78,8 +78,8 @@ test("간체는 오늘·내일을 같은 CNY 환율로 환산한다", () => {
   render(<TodayTomorrow rates={parseRates(CSV)} today="2026-09-17" lang="zh-Hans" conversions={[
     { currency: "CNY", fixingDate: "2026-09-17", krwPerUnit: 190, source: "ecb" },
   ]} />)
-  expect(screen.getByText("约人民币7.1元")).toBeInTheDocument()
-  expect(screen.getByText("约人民币7.2元")).toBeInTheDocument()
+  expect(screen.getByText("约人民币7.12元")).toBeInTheDocument()
+  expect(screen.getByText("约人民币7.20元")).toBeInTheDocument()
 })
 
 test("번체는 TWD·HKD 환산액을 가운뎃점으로 이어 한 줄로 표시한다", () => {
@@ -87,11 +87,11 @@ test("번체는 TWD·HKD 환산액을 가운뎃점으로 이어 한 줄로 표�
     { currency: "TWD", fixingDate: "2026-09-17", krwPerUnit: 40, source: "smbs" },
     { currency: "HKD", fixingDate: "2026-09-16", krwPerUnit: 160, source: "ecb" },
   ]} />)
-  const today = screen.getByText("約NT$33.8 · HK$8.5")
+  const today = screen.getByText("約NT$33.8 · HK$8.46")
   expect(today).toHaveClass("whitespace-nowrap")
   expect(today).not.toHaveClass("absolute")
   expect(today).toHaveClass("text-[12px]")
-  expect(screen.getByText("約NT$34.2 · HK$8.6")).toBeInTheDocument()
+  expect(screen.getByText("約NT$34.2 · HK$8.55")).toBeInTheDocument()
   expect(today.parentElement?.parentElement?.parentElement).toHaveClass("pb-7")
 })
 
@@ -102,7 +102,7 @@ test("번체의 한 통화가 없으면 다른 통화를 표시하고 고시 전
   expect(screen.getByText("待公布")).toBeInTheDocument()
   expect(screen.getAllByText(/^約HK\$/)).toHaveLength(1)
   expect(screen.queryByText(/NT\$/)).not.toBeInTheDocument()
-  expect(screen.getByText("約HK$8.5").parentElement?.parentElement?.parentElement).toHaveClass("pb-7")
+  expect(screen.getByText("約HK$8.46").parentElement?.parentElement?.parentElement).toHaveClass("pb-7")
 })
 
 function withUserAgent(ua: string, run: () => void) {
@@ -114,6 +114,21 @@ function withUserAgent(ua: string, run: () => void) {
     Object.defineProperty(navigator, "userAgent", { configurable: true, value: original })
   }
 }
+
+test.each([
+  { currency: "CNY", lang: "zh-Hans", krwPerUnit: 200.74, first: "约人民币6.97元", second: "约人民币6.99元" },
+  { currency: "HKD", lang: "zh-Hant", krwPerUnit: 180, first: "約HK$7.78", second: "約HK$7.80" },
+] as const)("$currency는 소수 둘째 자리로 작은 환율 차이를 표시한다", ({ currency, lang, krwPerUnit, first, second }) => {
+  const rates = parseRates(`fix_date,rate,method,source,collected_at
+2026-09-16,1400,MAR,smbs,x
+2026-09-17,1404,MAR,smbs,x
+`)
+  render(<TodayTomorrow rates={rates} today="2026-09-17" lang={lang} conversions={[
+    { currency, fixingDate: "2026-09-17", krwPerUnit, source: "ecb" },
+  ]} />)
+  expect(screen.getByText(first)).toBeInTheDocument()
+  expect(screen.getByText(second)).toBeInTheDocument()
+})
 
 test("아이폰에서는 오천엔 앱 링크를 앱스토어로 건다", () => {
   withUserAgent(
