@@ -370,10 +370,12 @@ curl로 접근 가능(메인 페이지 한정). 롯데·신라·현대는 미확
 - 사용자 요청에 따라 간체는 CNY, 번체는 TWD·HKD를 함께 표시한다. 원화 적용환율을
   각 통화의 `1통화당 원화` 값으로 나누며, 오늘·내일 모두 같은 참고값을 쓴다.
 - CNY·HKD: [ECB 기준환율](https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html)의
-  [공식 일별 XML](https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml)을 받는다.
+  [공식 90일 이력 XML](https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist-90d.xml)을 받는다.
   모두 EUR 기준이므로 `KRW/EUR ÷ CNY/EUR`, `KRW/EUR ÷ HKD/EUR`로 환산한다.
   ECB가 공표한 날짜를 그대로 저장하며, 한국 영업일과 공표 일정이 다를 수 있다.
+  매 조회 시 이력에 포함된 모든 날짜를 병합하므로, 90일 이내의 수집 누락은 다음 성공 시 복구된다.
 - TWD: 기존 SMBS XML의 `TWD` 코드. 2026-11-11 응답의 1 TWD = 40.76 KRW 확인.
+  USD·JPY·TWD와 최초 백필은 `smbs.fetch_window`의 요청·헤더·파싱을 공유한다.
 - SMBS의 [CNY 고시 중단 안내](https://www.smbs.co.kr/ExRate/TodayExRate.jsp)에 따라
   CNH를 CNY로 바꾸어 표기하지 않는다. ECB는 CNY(Chinese yuan renminbi)를 명시한다.
 - `data/reference.csv`에 날짜·통화·원화 환율·출처를 저장한다. 참고통화만 갱신돼도

@@ -27,7 +27,7 @@ from pathlib import Path
 
 import httpx
 
-from dfx import ecos, reference, smbs, ssgdfs
+from dfx import HEADERS, ecos, reference, smbs, ssgdfs
 from dfx.fixing import KST, fixing_for, today_kst
 from dfx.store import (
     Row,
@@ -53,18 +53,6 @@ REFERENCE_PATH = REPO_ROOT / "data" / "reference.csv"
 OVERLAP_DAYS = 10
 STALE_AFTER_DAYS = 7  # 한국 최장 연휴가 설·추석 + 주말로 5일 안팎이다
 TIMEOUT = httpx.Timeout(45.0)
-HEADERS = {"User-Agent": "duty-free-exchange-rate/1.0 (+https://github.com)"}
-
-
-def fetch_window(
-    client: httpx.Client, start: date, end: date, code: str = "USD"
-) -> list[tuple[date, float]]:
-    url = smbs.URL_TEMPLATE.format(
-        code=code, start=start.isoformat(), end=end.isoformat()
-    )
-    response = client.get(url, headers={**HEADERS, "X-Requested-With": "XMLHttpRequest"})
-    response.raise_for_status()
-    return smbs.parse(response.content)
 
 
 def fetch_jpy(client: httpx.Client, start: date, end: date) -> list[tuple[date, float]] | None:
@@ -76,7 +64,7 @@ def fetch_jpy(client: httpx.Client, start: date, end: date) -> list[tuple[date, 
     단위가 바뀌는 식의 형식 변경이면 모든 행이 걸러져 결국 아무것도 쓰지 않는다.
     """
     try:
-        rows = fetch_window(client, start, end, "JPY")
+        rows = smbs.fetch_window(client, start, end, "JPY")
     except (httpx.HTTPError, smbs.ParseError) as exc:
         print(f"WARN jpy unavailable: {exc}", file=sys.stderr)
         return None
@@ -172,7 +160,7 @@ def main() -> int:
     with httpx.Client(timeout=TIMEOUT, transport=httpx.HTTPTransport(retries=3)) as client:
         start = today - timedelta(days=OVERLAP_DAYS)
         try:
-            fetched = fetch_window(client, start, today)
+            fetched = smbs.fetch_window(client, start, today)
         except (httpx.HTTPError, smbs.ParseError) as exc:
             print(f"FATAL collection failed: {exc}", file=sys.stderr)
             return 1

@@ -9,7 +9,8 @@ from datetime import date, datetime
 
 import httpx
 
-from dfx.collect import RATES_PATH, TIMEOUT, fetch_window
+from dfx import smbs
+from dfx.collect import RATES_PATH, TIMEOUT
 from dfx.fixing import KST, today_kst
 from dfx.store import Row, method_for, read_rates, upsert, write_rates
 from dfx.validate import check_range
@@ -20,7 +21,7 @@ START = date(2016, 1, 1)
 def main() -> int:
     collected_at = datetime.now(KST).isoformat(timespec="seconds")
     with httpx.Client(timeout=TIMEOUT) as client:
-        fetched = fetch_window(client, START, today_kst())
+        fetched = smbs.fetch_window(client, START, today_kst())
 
     for fixing_date, rate in fetched:
         check_range(rate, fixing_date)

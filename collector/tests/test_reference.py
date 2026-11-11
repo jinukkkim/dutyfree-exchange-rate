@@ -13,6 +13,11 @@ ECB = b'''<gesmes:Envelope xmlns:gesmes="http://www.gesmes.org/xml/2002-08-01"
  </gesmes:Envelope>'''
 TWD = b"<chart><set label='26.11.10' value='41.33' /></chart>"
 DAY = date(2026, 11, 10)
+HISTORY = ECB.replace(
+    b"</Cube></Cube>",
+    b'''</Cube><Cube time="2026-11-09"><Cube currency="KRW" rate="1480"/>
+    <Cube currency="CNY" rate="7.4"/><Cube currency="HKD" rate="8"/></Cube></Cube>''',
+)
 
 
 def test_ecb_euro_quotes_become_krw_per_one_currency():
@@ -20,6 +25,34 @@ def test_ecb_euro_quotes_become_krw_per_one_currency():
         ReferenceRate(DAY, "CNY", 200, "ecb"),
         ReferenceRate(DAY, "HKD", 187.5, "ecb"),
     ]
+
+
+def test_ecb_history_recovers_missed_days_and_returns_chronological_rows():
+    assert reference.parse_ecb(HISTORY, DAY) == [
+        ReferenceRate(date(2026, 11, 9), "CNY", 200, "ecb"),
+        ReferenceRate(date(2026, 11, 9), "HKD", 185, "ecb"),
+        ReferenceRate(DAY, "CNY", 200, "ecb"),
+        ReferenceRate(DAY, "HKD", 187.5, "ecb"),
+    ]
+
+
+def test_ecb_failure_is_recovered_from_the_next_history_response():
+    fail = True
+
+    def handle(request):
+        if request.url.host != "www.ecb.europa.eu":
+            return httpx.Response(200, content=TWD)
+        assert request.url.path == "/stats/eurofxref/eurofxref-hist-90d.xml"
+        return httpx.Response(503) if fail else httpx.Response(200, content=HISTORY)
+
+    with httpx.Client(transport=httpx.MockTransport(handle)) as client:
+        assert {r.currency for r in reference.fetch(client, date(2026, 11, 9), DAY)} == {"TWD"}
+        fail = False
+        recovered = reference.fetch(client, date(2026, 11, 9), DAY)
+    assert {(r.fixing_date, r.currency) for r in recovered if r.source == "ecb"} == {
+        (date(2026, 11, 9), "CNY"), (date(2026, 11, 9), "HKD"),
+        (DAY, "CNY"), (DAY, "HKD"),
+    }
 
 
 @pytest.mark.parametrize("bad", [b"0", b"NaN", b"0.075", b"inf"])

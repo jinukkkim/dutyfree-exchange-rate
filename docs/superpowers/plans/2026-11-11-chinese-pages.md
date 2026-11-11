@@ -48,7 +48,7 @@
 ## Verification
 
 - `npm test`: 91 tests passed across 8 files, including follow-up currency conversions and middle-dot formatting.
-- Collector `.venv/bin/python -m pytest -q`: 57 tests passed. Live reference fetch returned CNY/TWD/HKD and matched the saved rows without changes.
+- Collector `.venv/bin/python -m pytest -q`: 63 tests passed after review fixes. Live fetch returned CNY/HKD history for 64 publication days (2026-08-13–2026-11-10), plus 8 TWD rows. No local data or git writes during the live check.
 - `npm run build`: TypeScript and Vite passed.
 - Production artifact checks: all 10 pages passed rewrite ordering, language, canonical, reciprocal hreflang, description, Open Graph and sitemap checks.
 - `git diff --check`: passed. Independent read-only review: no remaining findings.
@@ -74,3 +74,10 @@
 - [x] Display CNY in Simplified Chinese, TWD and HKD in Traditional Chinese, preserving JPY display.
 - [x] Check pending states, missing currencies, guide exclusion, reference dates, and single-line spacing in DOM tests.
 - [x] Run web suite/build and review the final changes. Independent review found no remaining issues; actual mobile rendering remains unverified.
+
+### Review corrections
+
+- [x] Reproduce first-date-only ECB parsing and lack of recovery after failed collection.
+- [x] Switch to the 90-day feed and parse all publication dates in chronological order.
+- [x] Share SMBS requests for USD/JPY/TWD and initial backfill; keep HTTP/parse errors visible to callers.
+- [x] Keep the intentional mobile header behavior and describe its effect on all language pages in the PR.

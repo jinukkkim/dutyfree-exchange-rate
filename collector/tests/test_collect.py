@@ -57,7 +57,7 @@ def run(tmp_path, monkeypatch):
     monkeypatch.setattr(collect.subprocess, "run", fake_run)
 
     def go(fetched, ecos_rows=None, jpy_rows=None, reference_rows=()):
-        monkeypatch.setattr(collect, "fetch_window", lambda *a: fetched)
+        monkeypatch.setattr(collect.smbs, "fetch_window", lambda *a: fetched)
         monkeypatch.setattr(collect, "fetch_ecos", lambda *a: ecos_rows)
         monkeypatch.setattr(collect, "fetch_jpy", lambda *a: jpy_rows)
         monkeypatch.setattr(collect.reference, "fetch", lambda *a: list(reference_rows))
@@ -145,7 +145,7 @@ def test_jpy_unavailable_does_not_block_collection(run):
 def test_jpy_out_of_range_row_is_dropped_alone(monkeypatch, capsys):
     """이상치 한 행이 같은 응답의 정상 행까지 막으면, 그 행이 10일 창에서 빠질 때까지 엔 값이 멈춘다."""
     rows = [(date(2026, 9, 18), 9.505), (date(2026, 9, 21), 948.2)]
-    monkeypatch.setattr(collect, "fetch_window", lambda *a: rows)
+    monkeypatch.setattr(collect.smbs, "fetch_window", lambda *a: rows)
     assert collect.fetch_jpy(None, date(2026, 9, 11), date(2026, 9, 21)) == [(date(2026, 9, 21), 948.2)]
     assert "jpy out of range" in capsys.readouterr().err
 
