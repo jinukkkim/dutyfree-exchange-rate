@@ -34,9 +34,12 @@ def parse_ecb(xml: bytes, today: date) -> list[ReferenceRate]:
     for cube in cubes:
         try:
             fixing_date = date.fromisoformat(cube.attrib["time"])
-            quotes = {node.attrib["currency"]: float(node.attrib["rate"]) for node in cube if "currency" in node.attrib}
-            krw = quotes["KRW"]
-        except (KeyError, ValueError):
+            quotes = {
+                node.attrib["currency"]: node.get("rate")
+                for node in cube if node.get("currency") in ("KRW", "CNY", "HKD")
+            }
+            krw = float(quotes["KRW"])
+        except (KeyError, TypeError, ValueError):
             print(f"WARN ECB cube skipped (parse error): {cube.attrib}", file=sys.stderr)
             continue
         if fixing_date > today or not math.isfinite(krw) or krw <= 0:
@@ -44,7 +47,10 @@ def parse_ecb(xml: bytes, today: date) -> list[ReferenceRate]:
             continue
 
         for currency in ("CNY", "HKD"):
-            quote = quotes.get(currency, 0)
+            try:
+                quote = float(quotes.get(currency))
+            except (TypeError, ValueError):
+                quote = 0
             rate = krw / quote if math.isfinite(quote) and quote > 0 else 0
             if in_range(currency, rate):
                 rows.append(ReferenceRate(fixing_date, currency, rate, "ecb"))

@@ -55,11 +55,25 @@ def test_ecb_failure_is_recovered_from_the_next_history_response():
     }
 
 
-@pytest.mark.parametrize("bad", [b"0", b"NaN", b"0.075", b"inf"])
+@pytest.mark.parametrize("bad", [b"0", b"NaN", b"0.075", b"inf", b"broken", b""])
 def test_bad_cny_does_not_hide_good_hkd(bad):
     assert reference.parse_ecb(ECB.replace(b'"7.5"', b'"' + bad + b'"'), DAY) == [
         ReferenceRate(DAY, "HKD", 187.5, "ecb"),
     ]
+
+
+@pytest.mark.parametrize("quote", [b'<Cube currency="BGN" rate="broken"/>', b'<Cube currency="BGN"/>'])
+def test_unrelated_currency_errors_do_not_discard_used_quotes(quote):
+    body = ECB.replace(b"</Cube></Cube>", quote + b"</Cube></Cube>")
+    assert reference.parse_ecb(body, DAY) == [
+        ReferenceRate(DAY, "CNY", 200, "ecb"),
+        ReferenceRate(DAY, "HKD", 187.5, "ecb"),
+    ]
+
+
+def test_missing_cny_rate_does_not_discard_hkd():
+    body = ECB.replace(b'currency="CNY" rate="7.5"', b'currency="CNY"')
+    assert reference.parse_ecb(body, DAY) == [ReferenceRate(DAY, "HKD", 187.5, "ecb")]
 
 
 def test_future_ecb_cube_is_skipped():

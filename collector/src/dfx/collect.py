@@ -228,9 +228,9 @@ def main() -> int:
 
     references = read_reference_rates(REFERENCE_PATH)
     reference_merged = {**references, **{(r.fixing_date, r.currency): r for r in reference_rows}}
-    reference_changed = reference_merged != references
+    reference_changes = [row for key, row in reference_merged.items() if references.get(key) != row]
 
-    if changed == 0 and not newly_seen and not jpy_changed and not reference_changed:
+    if changed == 0 and not newly_seen and not jpy_changed and not reference_changes:
         print(f"no change (latest fixing {latest.isoformat()})")
         return 0
 
@@ -244,13 +244,13 @@ def main() -> int:
     elif jpy_changed:
         message = f"data(collect): jpy through {max(jpy_merged).isoformat()}"
     else:
-        message = f"data(collect): reference rates through {max(r.fixing_date for r in reference_rows).isoformat()}"
+        message = f"data(collect): reference rates through {max(r.fixing_date for r in reference_changes).isoformat()}"
     if newly_seen:
         paths.append(str(ECOS_SEEN_PATH))
     if jpy_changed:
         write_jpy(JPY_PATH, jpy_merged)
         paths.append(str(JPY_PATH))
-    if reference_changed:
+    if reference_changes:
         write_reference_rates(REFERENCE_PATH, reference_merged)
         paths.append(str(REFERENCE_PATH))
 
@@ -264,7 +264,7 @@ def main() -> int:
     print(
         f"committed {changed} row(s), {len(newly_seen)} ecos first-seen, "
         f"jpy {'updated' if jpy_changed else 'unchanged'}, "
-        f"references {'updated' if reference_changed else 'unchanged'}, latest fixing {latest.isoformat()}"
+        f"references {'updated' if reference_changes else 'unchanged'}, latest fixing {latest.isoformat()}"
     )
     return 0
 

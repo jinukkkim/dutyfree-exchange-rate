@@ -374,6 +374,7 @@ curl로 접근 가능(메인 페이지 한정). 롯데·신라·현대는 미확
   모두 EUR 기준이므로 `KRW/EUR ÷ CNY/EUR`, `KRW/EUR ÷ HKD/EUR`로 환산한다.
   ECB가 공표한 날짜를 그대로 저장하며, 한국 영업일과 공표 일정이 다를 수 있다.
   매 조회 시 이력에 포함된 모든 날짜를 병합하므로, 90일 이내의 수집 누락은 다음 성공 시 복구된다.
+  KRW·CNY·HKD만 읽고 CNY/HKD 숫자는 개별 검증해, 무관한 통화나 한 통화의 오류가 다른 정상 값을 버리지 않도록 한다.
 - TWD: 기존 SMBS XML의 `TWD` 코드. 2026-11-11 응답의 1 TWD = 40.76 KRW 확인.
   USD·JPY·TWD와 최초 백필은 `smbs.fetch_window`의 요청·헤더·파싱을 공유한다.
 - SMBS의 [CNY 고시 중단 안내](https://www.smbs.co.kr/ExRate/TodayExRate.jsp)에 따라

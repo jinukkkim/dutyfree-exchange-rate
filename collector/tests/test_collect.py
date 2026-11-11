@@ -183,3 +183,15 @@ def test_partial_reference_update_preserves_other_currencies(run):
     corrected = cny._replace(krw_per_unit=201)
     log = run(fetched, reference_rows=[corrected])
     assert log["reference"] == {(cny.fixing_date, "CNY"): corrected, (twd.fixing_date, "TWD"): twd}
+
+
+@pytest.mark.parametrize("correcting", [False, True])
+def test_reference_commit_date_comes_from_changed_rows_only(run, correcting):
+    fetched = [(date(2026, 9, 17), 1368.3), (date(2026, 9, 18), 1380.3)]
+    older = ReferenceRate(date(2026, 9, 17), "CNY", 200, "ecb")
+    latest = ReferenceRate(date(2026, 9, 21), "HKD", 180, "ecb")
+    run(fetched, reference_rows=([older] if correcting else []) + [latest])
+    revised = older._replace(krw_per_unit=201)
+    log = run(fetched, reference_rows=[revised, latest])
+    assert log["cmds"][-3] == ["git", "commit", "-m", "data(collect): reference rates through 2026-09-17"]
+    assert log["reference"][older.fixing_date, "CNY"] == revised
