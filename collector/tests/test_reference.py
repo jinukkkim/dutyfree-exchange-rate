@@ -62,15 +62,27 @@ def test_bad_cny_does_not_hide_good_hkd(bad):
     ]
 
 
-def test_future_ecb_data_is_rejected():
-    with pytest.raises(ValueError):
-        reference.parse_ecb(ECB, date(2026, 11, 9))
+def test_future_ecb_cube_is_skipped():
+    assert reference.parse_ecb(ECB, date(2026, 11, 9)) == []
 
 
-@pytest.mark.parametrize("body", [b"broken xml", ECB.replace(b'"KRW"', b'"USD"')])
+def test_bad_cube_does_not_discard_good_cubes():
+    bad_krw = HISTORY.replace(b'rate="1480"', b'rate="0"')
+    assert reference.parse_ecb(bad_krw, DAY) == [
+        ReferenceRate(DAY, "CNY", 200, "ecb"),
+        ReferenceRate(DAY, "HKD", 187.5, "ecb"),
+    ]
+
+
+@pytest.mark.parametrize("body", [b"broken xml"])
 def test_bad_ecb_document_is_rejected(body):
     with pytest.raises(ValueError):
         reference.parse_ecb(body, DAY)
+
+
+def test_all_cubes_missing_krw_returns_empty():
+    body = ECB.replace(b'"KRW"', b'"USD"')
+    assert reference.parse_ecb(body, DAY) == []
 
 
 @pytest.mark.parametrize("failed", ["ecb", "smbs", None])

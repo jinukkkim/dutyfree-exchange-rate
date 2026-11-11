@@ -36,10 +36,12 @@ def parse_ecb(xml: bytes, today: date) -> list[ReferenceRate]:
             fixing_date = date.fromisoformat(cube.attrib["time"])
             quotes = {node.attrib["currency"]: float(node.attrib["rate"]) for node in cube if "currency" in node.attrib}
             krw = quotes["KRW"]
-        except (KeyError, ValueError) as exc:
-            raise ValueError("invalid ECB reference rates") from exc
+        except (KeyError, ValueError):
+            print(f"WARN ECB cube skipped (parse error): {cube.attrib}", file=sys.stderr)
+            continue
         if fixing_date > today or not math.isfinite(krw) or krw <= 0:
-            raise ValueError("invalid ECB reference date or KRW quote")
+            print(f"WARN ECB cube skipped (bad date or KRW): {fixing_date}", file=sys.stderr)
+            continue
 
         for currency in ("CNY", "HKD"):
             quote = quotes.get(currency, 0)
