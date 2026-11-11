@@ -25,7 +25,7 @@ concurrency:
 jobs:
   collect:
     runs-on: ubuntu-latest
-    # 수집은 HTTP 서너 번이다. 10분을 넘겼다면 원본이 멈춘 것이므로 기본값
+    # 수집은 HTTP 몇 번이다. 10분을 넘겼다면 원본이 멈춘 것이므로 기본값
     # 6시간을 붙들고 있을 이유가 없다.
     timeout-minutes: 10
     steps:

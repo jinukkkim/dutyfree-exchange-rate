@@ -27,17 +27,19 @@ from pathlib import Path
 
 import httpx
 
-from dfx import ecos, smbs, ssgdfs
+from dfx import ecos, reference, smbs, ssgdfs
 from dfx.fixing import KST, fixing_for, today_kst
 from dfx.store import (
     Row,
     method_for,
     read_jpy,
     read_rates,
+    read_reference_rates,
     read_seen,
     upsert,
     write_jpy,
     write_rates,
+    write_reference_rates,
     write_seen,
 )
 from dfx.validate import ValidationError, check_range, is_abnormal_move
@@ -46,6 +48,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 RATES_PATH = REPO_ROOT / "data" / "rates.csv"
 ECOS_SEEN_PATH = REPO_ROOT / "data" / "ecos_seen.csv"
 JPY_PATH = REPO_ROOT / "data" / "jpy.csv"
+REFERENCE_PATH = REPO_ROOT / "data" / "reference.csv"
 
 OVERLAP_DAYS = 10
 STALE_AFTER_DAYS = 7  # 한국 최장 연휴가 설·추석 + 주말로 5일 안팎이다
@@ -175,6 +178,7 @@ def main() -> int:
             return 1
         ecos_rows = fetch_ecos(client, start, today)
         jpy_rows = fetch_jpy(client, start, today)
+        reference_rows = reference.fetch(client, start, today)
 
         existing = read_rates(RATES_PATH)
         known = {row.fixing_date: row.rate for row in existing}
@@ -234,7 +238,11 @@ def main() -> int:
     jpy_merged = {**jpy, **dict(jpy_rows or [])}
     jpy_changed = jpy_merged != jpy
 
-    if changed == 0 and not newly_seen and not jpy_changed:
+    references = read_reference_rates(REFERENCE_PATH)
+    reference_merged = {**references, **{(r.fixing_date, r.currency): r for r in reference_rows}}
+    reference_changed = reference_merged != references
+
+    if changed == 0 and not newly_seen and not jpy_changed and not reference_changed:
         print(f"no change (latest fixing {latest.isoformat()})")
         return 0
 
@@ -245,13 +253,18 @@ def main() -> int:
         message = f"data(collect): rates through {latest.isoformat()}"
     elif newly_seen:
         message = f"data(collect): ecos seen through {max(newly_seen).isoformat()}"
-    else:
+    elif jpy_changed:
         message = f"data(collect): jpy through {max(jpy_merged).isoformat()}"
+    else:
+        message = f"data(collect): reference rates through {max(r.fixing_date for r in reference_rows).isoformat()}"
     if newly_seen:
         paths.append(str(ECOS_SEEN_PATH))
     if jpy_changed:
         write_jpy(JPY_PATH, jpy_merged)
         paths.append(str(JPY_PATH))
+    if reference_changed:
+        write_reference_rates(REFERENCE_PATH, reference_merged)
+        paths.append(str(REFERENCE_PATH))
 
     subprocess.run(["git", "add", *paths], cwd=REPO_ROOT, check=True)
     subprocess.run(["git", "commit", "-m", message], cwd=REPO_ROOT, check=True)
@@ -262,7 +275,8 @@ def main() -> int:
     subprocess.run(["git", "push"], cwd=REPO_ROOT, check=True)
     print(
         f"committed {changed} row(s), {len(newly_seen)} ecos first-seen, "
-        f"jpy {'updated' if jpy_changed else 'unchanged'}, latest fixing {latest.isoformat()}"
+        f"jpy {'updated' if jpy_changed else 'unchanged'}, "
+        f"references {'updated' if reference_changed else 'unchanged'}, latest fixing {latest.isoformat()}"
     )
     return 0
 
