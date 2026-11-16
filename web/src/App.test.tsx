@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, render, screen, within } from "@testing-library/react"
 import { afterEach, expect, test, vi } from "vitest"
 
 import App from "./App"
@@ -83,4 +83,57 @@ test.each(chinese)("$lang 공유 복사 실패도 번역한다", async ({ lang }
   render(<App />)
   fireEvent.click(screen.getByRole("button", { name: "分享" }))
   expect(await screen.findByRole("button", { name: lang === "zh-Hans" ? "复制失败" : "複製失敗" })).toBeInTheDocument()
+})
+
+test("한국어 가이드는 기준환율 설명 아래 차트와 바로 뒤의 접힌 상세 이력을 보여준다", () => {
+  window.history.replaceState({}, "", "/guide/")
+  render(<App />)
+
+  expect(screen.getByRole("table", { hidden: true })).not.toBeVisible()
+  fireEvent.click(screen.getByText("변경 이력 자세히 보기"))
+  const table = screen.getByRole("table", { name: "면세점 기준환율(국산품용) 변경 이력" })
+  const rows = within(table).getAllByRole("row")
+  expect(rows).toHaveLength(8)
+  expect(within(rows[0]).getAllByRole("columnheader")[0]).toHaveTextContent("변경")
+  expect(within(rows[1]).getByRole("rowheader")).toHaveTextContent("1,400 → 1,350")
+  expect(rows[1]).toHaveTextContent("2026.09")
+  expect(rows[1]).toHaveTextContent("롯데·현대")
+  expect(rows[1]).toHaveTextContent("신라·신세계")
+  expect(rows[1]).toHaveTextContent("9/10")
+  expect(rows[1]).toHaveTextContent("9/11")
+  const sources = within(rows[1]).getAllByRole("button", { name: /출처/ })
+  expect(sources.map((source) => source.textContent)).toEqual(["서울경제", "헤럴드경제", "아주경제"])
+  expect(rows.at(-1)).toHaveTextContent("2024.12")
+  expect(rows.at(-1)).toHaveTextContent("12/18")
+  expect(rows.at(-1)).toHaveTextContent("12/20")
+  expect(rows.at(-1)).toHaveTextContent("1,350 → 1,400")
+  const november = rows.find((row) => row.textContent?.includes("2025.11"))!
+  expect(november).toHaveTextContent("신세계")
+  expect(november).toHaveTextContent("일자 미상")
+  expect(november).toHaveTextContent("현대: 인상 여부·적용일 미확인")
+  expect(november).toHaveTextContent("11/3")
+  expect(november).toHaveTextContent("11/4")
+  const august = rows.find((row) => row.textContent?.includes("2026.08"))!
+  expect(within(august).getAllByRole("button", { name: /출처/ }).map((button) => button.textContent)).toEqual(["서울경제"])
+  for (const period of ["2026.07", "2026.03"]) {
+    const row = rows.find((item) => item.textContent?.includes(period))!
+    expect(within(row).getAllByRole("button", { name: /출처/ })).toHaveLength(3)
+  }
+  expect(rows.find((row) => row.textContent?.includes("2025.06"))).toHaveTextContent("개별 면세점 미확인")
+  expect(screen.getByText(/마지막 확인 2026.11.16/)).toHaveTextContent("수동")
+  expect(screen.getByText(/현재 적용값을 보장하지 않습니다/)).toBeInTheDocument()
+  const explanation = screen.getByRole("heading", { name: "면세점 기준환율은 다른 이야기입니다" })
+  const chart = screen.getByRole("img", { name: "면세점 기준환율(국산품용) 변경 추이" })
+  const nextSection = screen.getByRole("heading", { name: "2027년부터 산출 방식이 바뀝니다" })
+  expect(explanation.compareDocumentPosition(chart) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(chart.compareDocumentPosition(nextSection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(table.closest("details")).toBe(chart.closest("figure")!.nextElementSibling)
+  expect(table.compareDocumentPosition(nextSection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+})
+
+test.each(["/", "/en/guide", "/ja/guide", "/zh-Hans/guide", "/zh-Hant/guide"])("%s에는 한국어 기준환율 이력을 추가하지 않는다", (path) => {
+  window.history.replaceState({}, "", path)
+  render(<App />)
+  expect(screen.queryByRole("table", { name: "면세점 기준환율(국산품용) 변경 이력" })).not.toBeInTheDocument()
+  expect(screen.queryByRole("img", { name: "면세점 기준환율(국산품용) 변경 추이" })).not.toBeInTheDocument()
 })
