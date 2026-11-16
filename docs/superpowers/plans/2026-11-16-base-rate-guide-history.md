@@ -126,3 +126,12 @@ Task 8 verification: all 123 web tests, TypeScript/Vite build and diff checks pa
 - [x] Show the research month above the fixed latest value; preserve proportional spacing and hover/touch selection for all 24 months.
 
 Task 9 verification: all 124 web tests, TypeScript/Vite build and diff checks passed. Actual browser rendering remains unverified; no commit or deployment.
+
+### Task 10: Address PR #50 scrolling and chart data edge cases
+
+- [x] Reproduce vertical-scroll blocking, missing non-50 maximum tick and empty/invalid archive crashes with failing tests.
+- [x] Allow native vertical panning and clear selection on vertical movement; preserve tap/horizontal selection and dismissal on end/cancel.
+- [x] Include the maximum tick outside 50-won intervals and show a fallback when no valid records remain.
+- [x] Run the full suite, build and diff checks before committing and pushing the fixes.
+
+Task 10 verification: 128 web tests and 82 collector tests passed; TypeScript/Vite build and diff checks passed. Native browser scrolling remains unverified because browser access is unavailable.

@@ -10,21 +10,23 @@ const latest = changes[changes.length - 1]
 const HEIGHT = 240
 const PAD = { left: 56, right: 16, top: 16, bottom: 28 }
 const values = changes.map((change) => change.rate)
-const min = Math.min(...values)
-const max = Math.max(...values)
+const min = values.length ? Math.min(...values) : 0
+const max = values.length ? Math.max(...values) : 0
 // 월 단위 자료의 정밀도를 유지하면서 실제 개월 간격에 비례해 배치한다.
 const times = changes.map(({ period }) => {
   const [year, month] = period.split("-").map(Number)
   return year * 12 + month - 1
 })
-const firstMonth = times[0]
 const [verifiedYear, verifiedMonth] = meta.base_rates_verified_at.split("-").map(Number)
-const lastMonth = Math.max(times[times.length - 1], verifiedYear * 12 + verifiedMonth - 1)
+const verifiedTime = verifiedYear * 12 + verifiedMonth - 1
+const firstMonth = times[0] ?? verifiedTime
+const lastMonth = Math.max(times[times.length - 1] ?? verifiedTime, verifiedTime)
 const monthSpan = lastMonth - firstMonth
 const plotMin = min - 25
 const plotMax = max + 25
 const y = (rate: number) => PAD.top + ((plotMax - rate) / (plotMax - plotMin)) * (HEIGHT - PAD.top - PAD.bottom)
-const ticks = Array.from({ length: (max - min) / 50 + 1 }, (_, index) => min + index * 50)
+const ticks = Array.from({ length: Math.floor((max - min) / 50) + 1 }, (_, index) => min + index * 50)
+if (ticks[ticks.length - 1] !== max) ticks.push(max)
 const month = (period: string) => period.replace("-", ".") + "."
 const amount = (rate: number) => rate.toLocaleString("ko-KR")
 const axisMonths = Array.from(new Set([firstMonth, firstMonth + Math.round(monthSpan / 2), lastMonth]))
@@ -33,6 +35,7 @@ const axisLabel = (time: number) => `${Math.floor(time / 12)}.${String(time % 12
 export default function BaseRateChart() {
   const descriptionId = useId()
   const container = useRef<HTMLDivElement>(null)
+  const touchOrigin = useRef<{ clientX: number; clientY: number } | null>(null)
   const [width, setWidth] = useState(640)
   const [hover, setHover] = useState<number | null>(null)
   const hovered = hover === null ? null : changes[times.reduce((latest, time, index) => time <= hover ? index : latest, 0)]
@@ -68,9 +71,18 @@ export default function BaseRateChart() {
     setHover(time)
   }
 
-  function touchAt(event: TouchEvent<SVGSVGElement>) {
+  if (!latest) return <p className="mt-6 text-sm text-muted">확인된 기준환율 이력이 없습니다.</p>
+
+  function touchAt(event: TouchEvent<SVGSVGElement>, starting = false) {
     const touch = event.touches[0]
-    if (touch) pointAt(touch.clientX, event.currentTarget)
+    if (!touch) return
+    if (starting) touchOrigin.current = touch
+    const origin = touchOrigin.current
+    if (origin && Math.abs(touch.clientY - origin.clientY) > Math.abs(touch.clientX - origin.clientX)) {
+      setHover(null)
+      return
+    }
+    pointAt(touch.clientX, event.currentTarget)
   }
 
   return (
@@ -89,10 +101,11 @@ export default function BaseRateChart() {
         </div>
       </div>
       <div ref={container} className="relative pt-7">
-        <svg viewBox={`0 0 ${width} ${HEIGHT}`} className="block h-60 w-full touch-none"
+        <svg viewBox={`0 0 ${width} ${HEIGHT}`} className="block h-60 w-full touch-pan-y"
           role="img" aria-label="면세점 기준환율(국산품용) 변경 추이" aria-describedby={descriptionId}
           onMouseMove={(event) => pointAt(event.clientX, event.currentTarget)} onMouseLeave={() => setHover(null)}
-          onTouchStart={touchAt} onTouchMove={touchAt} onTouchEnd={() => setHover(null)} onTouchCancel={() => setHover(null)}>
+          onTouchStart={(event) => touchAt(event, true)} onTouchMove={touchAt}
+          onTouchEnd={() => { touchOrigin.current = null; setHover(null) }} onTouchCancel={() => { touchOrigin.current = null; setHover(null) }}>
           <desc id={descriptionId}>
             확인된 변경 사건을 시간순으로 표시하며, 가로 간격은 실제 개월 수에 비례합니다.
             월별 선택 값은 해당 월까지 확인된 마지막 변경 값을 표시합니다.
