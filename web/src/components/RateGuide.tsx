@@ -1,3 +1,6 @@
+import BaseRateChart from "./BaseRateChart"
+import BaseRateHistory from "./BaseRateHistory"
+
 /**
  * 환율 정보 페이지.
  *
@@ -136,6 +139,8 @@ export default function RateGuide() {
           환산한 표시값입니다. 기준환율은 1년에 서너 번만 바뀌고, 수입 브랜드에는
           적용되지 않습니다.
         </p>
+        <BaseRateChart />
+        <BaseRateHistory />
       </Section>
 
       <Section title="2027년부터 산출 방식이 바뀝니다">
