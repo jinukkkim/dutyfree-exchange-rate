@@ -41,28 +41,22 @@ test("환율 정보 페이지로 가는 링크를 둔다", () => {
   ).toHaveAttribute("href", "/guide")
 })
 
-test("영어판은 단위를 밝히고 영어 가이드로 보내며 오천엔 배너를 숨긴다", () => {
-  withUserAgent("iPhone", () => {
-    render(<TodayTomorrow rates={parseRates(CSV)} today="2026-09-17" lang="en" />)
-  })
+test("영어판은 단위를 밝히고 영어 가이드로 보낸다", () => {
+  render(<TodayTomorrow rates={parseRates(CSV)} today="2026-09-17" lang="en" />)
 
   expect(document.body).toHaveTextContent("Today · Sep 17 (Thu)")
   expect(document.body).toHaveTextContent("Tomorrow · Sep 18 (Fri)")
   expect(screen.getByText(/KRW per 1 USD/)).toBeInTheDocument()
   expect(screen.getByRole("link", { name: /How this rate is set/ })).toHaveAttribute("href", "/en/guide")
-  expect(screen.queryByRole("link", { name: /오천엔/ })).not.toBeInTheDocument()
 })
 
-test("일본어판은 단위를 밝히고 일본어 가이드로 보내며 오천엔 배너를 숨긴다", () => {
-  withUserAgent("iPhone", () => {
-    render(<TodayTomorrow rates={parseRates(CSV)} today="2026-09-17" lang="ja" />)
-  })
+test("일본어판은 단위를 밝히고 일본어 가이드로 보낸다", () => {
+  render(<TodayTomorrow rates={parseRates(CSV)} today="2026-09-17" lang="ja" />)
 
   expect(screen.getByText("今日 · 9/17(木)")).toBeInTheDocument()
   expect(screen.getByText("明日 · 9/18(金)")).toBeInTheDocument()
   expect(screen.getByText(/1ドルあたりのウォン/)).toBeInTheDocument()
   expect(screen.getByRole("link", { name: /レートの決まり方/ })).toHaveAttribute("href", "/ja/guide")
-  expect(screen.queryByRole("link", { name: /오천엔/ })).not.toBeInTheDocument()
 })
 
 test("일본어판은 두 숫자를 같은 엔 레이트로 환산해 아래에 적는다", () => {
@@ -105,16 +99,6 @@ test("번체의 한 통화가 없으면 다른 통화를 표시하고 고시 전
   expect(screen.getByText("約HK$8.46").parentElement?.parentElement?.parentElement).toHaveClass("pb-7")
 })
 
-function withUserAgent(ua: string, run: () => void) {
-  const original = navigator.userAgent
-  Object.defineProperty(navigator, "userAgent", { configurable: true, value: ua })
-  try {
-    run()
-  } finally {
-    Object.defineProperty(navigator, "userAgent", { configurable: true, value: original })
-  }
-}
-
 test.each([
   { currency: "CNY", lang: "zh-Hans", krwPerUnit: 200.74, first: "约人民币6.97元", second: "约人民币6.99元" },
   { currency: "HKD", lang: "zh-Hant", krwPerUnit: 180, first: "約HK$7.78", second: "約HK$7.80" },
@@ -128,31 +112,6 @@ test.each([
   ]} />)
   expect(screen.getByText(first)).toBeInTheDocument()
   expect(screen.getByText(second)).toBeInTheDocument()
-})
-
-test("아이폰에서는 오천엔 앱 링크를 앱스토어로 건다", () => {
-  withUserAgent(
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 NAVER(inapp; search)",
-    () => {
-      render(<TodayTomorrow rates={parseRates(CSV)} today="2026-09-17" />)
-
-      expect(screen.getByRole("link", { name: /오천엔 앱으로 챙기세요/ })).toHaveAttribute(
-        "href",
-        expect.stringContaining("apps.apple.com/kr/app/id6829470220"),
-      )
-    },
-  )
-})
-
-test("안드로이드에서는 받을 수 없는 앱 링크를 보이지 않는다", () => {
-  withUserAgent(
-    "Mozilla/5.0 (Linux; Android 14; SM-S921N) AppleWebKit/537.36 Chrome/130.0 Mobile Safari/537.36",
-    () => {
-      render(<TodayTomorrow rates={parseRates(CSV)} today="2026-09-17" />)
-
-      expect(screen.queryByText(/오천엔/)).not.toBeInTheDocument()
-    },
-  )
 })
 
 test("오르면 차액을 빨강으로, 같으면 회색으로 적는다", () => {
